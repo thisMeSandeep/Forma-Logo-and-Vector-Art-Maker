@@ -21,7 +21,7 @@ export function TopBar({ sidebarOpen, onToggleSidebar }: Props) {
     >
       {/* Brand mark + name */}
       <div className="flex items-center gap-2 select-none">
-        <BrandMark />
+        <img src="/logo.svg" alt="" className="h-12 w-12" aria-hidden />
         <div className="flex items-baseline gap-1.5">
           <span className="text-sm font-semibold tracking-tight">Forma</span>
           <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70">
@@ -60,27 +60,5 @@ export function TopBar({ sidebarOpen, onToggleSidebar }: Props) {
         </Button>
       </div>
     </header>
-  );
-}
-
-// Small geometric mark — an irregular polygon nodding to the grid-drawing theme
-function BrandMark() {
-  return (
-    <span
-      className="inline-flex items-center justify-center w-6 h-6 rounded-md"
-      style={{
-        background: 'linear-gradient(135deg, var(--brand-from, #4f86f7), var(--brand-to, #8b5cf6))',
-        boxShadow: '0 1px 0 0 rgba(255,255,255,0.08) inset, 0 1px 2px rgba(0,0,0,0.18)',
-      }}
-      aria-hidden
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path
-          d="M7 1.5 L12 4.5 L11 11 L3 11 L2 4.5 Z"
-          fill="white"
-          fillOpacity="0.95"
-        />
-      </svg>
-    </span>
   );
 }

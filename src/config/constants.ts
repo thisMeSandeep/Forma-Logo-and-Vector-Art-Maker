@@ -51,10 +51,10 @@ export const ZOOM_BUTTON_FACTOR = 1.25;
 export const PAN_SPEED = 0.6;
 
 // Whitespace around shapes in exported SVG/PNG (in SVG user units)
-export const EXPORT_PADDING = 8;
+export const EXPORT_PADDING = 4;
 
 // Pixel scale multiplier for PNG export (higher = sharper output)
-export const EXPORT_PNG_SCALE = 2;
+export const EXPORT_PNG_SCALE = 3;
 
 // Fill opacity applied to existing shapes while the cutout tool is active —
 // lets the user see grid intersections inside shapes for snapping
