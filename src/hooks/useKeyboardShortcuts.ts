@@ -24,7 +24,11 @@ export function useKeyboardShortcuts() {
         redo();
       }
 
-      // TODO: Step 10 — Escape cancels in-progress polygon
+      // Escape cancels the in-progress polygon without committing it
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        useAppStore.getState().setPreviewPoints([]);
+      }
     }
 
     window.addEventListener('keydown', onKeyDown);

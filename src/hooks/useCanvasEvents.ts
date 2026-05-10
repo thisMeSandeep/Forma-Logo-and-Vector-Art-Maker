@@ -54,9 +54,14 @@ export function useCanvasEvents(
       }
 
       // Move crosshair directly — bypasses React, no re-render on every frame
+      // Hidden for 'select' mode since that tool uses the default OS cursor
       if (crosshairRef.current) {
-        crosshairRef.current.style.display = '';
-        crosshairRef.current.setAttribute('transform', `translate(${raw.x},${raw.y})`);
+        if (activeToolRef.current !== 'select') {
+          crosshairRef.current.style.display = '';
+          crosshairRef.current.setAttribute('transform', `translate(${raw.x},${raw.y})`);
+        } else {
+          crosshairRef.current.style.display = 'none';
+        }
       }
 
       // Snapped point drives rubber-band line and close indicator via React

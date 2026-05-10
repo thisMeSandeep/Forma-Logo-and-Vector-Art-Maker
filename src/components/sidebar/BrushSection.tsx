@@ -7,15 +7,15 @@ const TOOLS: { value: Tool; label: string; description: string }[] = [
 ];
 
 export function BrushSection() {
-  const activeTool  = useAppStore((s) => s.activeTool);
+  const activeTool    = useAppStore((s) => s.activeTool);
   const setActiveTool = useAppStore((s) => s.setActiveTool);
 
   return (
     <section className="flex flex-col gap-3">
-      <p className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
         Tool
       </p>
-      <div className="flex rounded-md overflow-hidden border border-[var(--panel-border)]">
+      <div className="flex rounded-md overflow-hidden border border-border">
         {TOOLS.map((tool) => (
           <button
             key={tool.value}
@@ -24,8 +24,8 @@ export function BrushSection() {
             className={[
               'flex-1 py-1.5 text-xs font-medium transition-colors',
               activeTool === tool.value
-                ? 'bg-white/10 text-white'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5',
+                ? 'bg-foreground/10 text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5',
             ].join(' ')}
           >
             {tool.label}
