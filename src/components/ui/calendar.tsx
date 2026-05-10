@@ -87,6 +87,8 @@ function Calendar({
             : "flex items-center gap-1 rounded-(--cell-radius) text-sm [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
           defaultClassNames.caption_label
         ),
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error react-day-picker v9 ClassNames mismatch with installed types
         table: "w-full border-collapse",
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
