@@ -1,4 +1,3 @@
-import { ISO_ANGLE_DEG } from '../config/constants';
 import type { Point } from '../types';
 
 export function snapToSquare(point: Point, gridSize: number): Point {
@@ -8,21 +7,19 @@ export function snapToSquare(point: Point, gridSize: number): Point {
   };
 }
 
-// TODO: Step 7 — implement proper isometric snapping
+// Snaps to the nearest vertex of the triangular lattice defined by the three
+// line families at 0°, 60°, 120°. Lattice basis: b1=(g,0), b2=(g/2, g√3/2).
+// We express the point in oblique (n, m) coordinates, round both, then
+// reconstruct — this finds the nearest vertex in one pass with no iteration.
 export function snapToIsometric(point: Point, gridSize: number): Point {
-  const angleRad = (ISO_ANGLE_DEG * Math.PI) / 180;
-  const cos = Math.cos(angleRad);
-  const sin = Math.sin(angleRad);
-
-  // Transform to isometric basis, round, transform back
-  const u = (point.x * cos + point.y * sin) / gridSize;
-  const v = (-point.x * sin + point.y * cos) / gridSize;
-  const ru = Math.round(u);
-  const rv = Math.round(v);
-
+  const h = (gridSize * Math.sqrt(3)) / 2; // row height = g * √3/2
+  const m = point.y / h;
+  const n = point.x / gridSize - m / 2;
+  const rm = Math.round(m);
+  const rn = Math.round(n);
   return {
-    x: (ru * cos - rv * sin) * gridSize,
-    y: (ru * sin + rv * cos) * gridSize,
+    x: rn * gridSize + rm * gridSize / 2,
+    y: rm * h,
   };
 }
 
