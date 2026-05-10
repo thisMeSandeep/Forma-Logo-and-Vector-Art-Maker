@@ -117,6 +117,34 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ─── Forma app design tokens ──────────────────────────────────────────────
+   Define both light and dark values here so switching themes later is a
+   single-file change. Components reference var(--token) — never raw colors.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --canvas-bg: oklch(0.96 0 0);
+  --grid-line-stroke: oklch(0 0 0 / 8%);
+  --grid-line-width: 1px;
+  --topbar-bg: oklch(0.97 0 0);
+  --sidebar-bg: oklch(0.97 0 0);
+  --panel-border: oklch(0 0 0 / 10%);
+  --cursor-dot-fill: oklch(0.2 0 0);
+  --preview-line-stroke: oklch(0.2 0 0 / 60%);
+  --close-indicator-fill: oklch(0.85 0.17 85);
+}
+
+.dark {
+  --canvas-bg: oklch(0.13 0 0);
+  --grid-line-stroke: oklch(1 0 0 / 7%);
+  --grid-line-width: 1px;
+  --topbar-bg: oklch(0.16 0 0);
+  --sidebar-bg: oklch(0.16 0 0);
+  --panel-border: oklch(1 0 0 / 10%);
+  --cursor-dot-fill: oklch(1 0 0);
+  --preview-line-stroke: oklch(1 0 0 / 60%);
+  --close-indicator-fill: oklch(0.85 0.17 85);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

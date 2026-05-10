@@ -1,18 +1,19 @@
-// TODO: Steps 3–8 — add mouse handlers via useCanvasEvents
+// TODO: Step 4 — pointerdown polygon building via useCanvasEvents
 import { useRef } from 'react';
-import { CANVAS_BG_COLOR } from '../../config/constants';
+import { useCanvasEvents } from '../../hooks/useCanvasEvents';
 import { GridLayer } from './GridLayer';
 import { ShapeLayer } from './ShapeLayer';
 import { PreviewLayer } from './PreviewLayer';
 
 export function DrawingCanvas() {
   const svgRef = useRef<SVGSVGElement>(null);
+  useCanvasEvents(svgRef);
 
   return (
     <svg
       ref={svgRef}
       className="w-full h-full"
-      style={{ background: CANVAS_BG_COLOR }}
+      style={{ background: 'var(--canvas-bg)' }}
     >
       <GridLayer />
       <ShapeLayer />
