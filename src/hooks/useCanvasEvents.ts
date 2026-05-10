@@ -41,7 +41,17 @@ export function useCanvasEvents(
     function onPointerMove(e: PointerEvent) {
       const raw = getRawPoint(e);
       const snap = gridModeRef.current === 'square' ? snapToSquare : snapToIsometric;
-      const snapped = snap(raw, gridSizeRef.current);
+      let snapped = snap(raw, gridSizeRef.current);
+
+      // When near the first point, lock the snap target exactly onto it so the
+      // close click always lands at distance 0 — no need for pixel-perfect aim
+      const { previewPoints } = useAppStore.getState();
+      if (previewPoints.length >= 3) {
+        const first = previewPoints[0];
+        if (distance(snapped, first) < CLOSE_SNAP_RADIUS) {
+          snapped = first;
+        }
+      }
 
       // Move crosshair directly — bypasses React, no re-render on every frame
       if (crosshairRef.current) {

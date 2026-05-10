@@ -40,39 +40,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
 
   // Style setters update all existing shapes immediately so the canvas always
-  // reflects what the sidebar shows — changes are pushed to history so undo works.
-  setFillColor: (color: string) => {
-    const { shapes, history } = get();
-    set({
-      fillColor: color,
-      shapes: shapes.map((s) => ({ ...s, fill: color })),
-      history: [...history.slice(-MAX_HISTORY), shapes],
-      future: [],
-    });
-  },
-  setStrokeColor: (color: string) => {
-    const { shapes, history } = get();
-    set({
-      strokeColor: color,
-      shapes: shapes.map((s) => ({ ...s, stroke: color })),
-      history: [...history.slice(-MAX_HISTORY), shapes],
-      future: [],
-    });
-  },
-  setStrokeWidth: (width: number) => {
-    const { shapes, history } = get();
-    set({
-      strokeWidth: width,
-      shapes: shapes.map((s) => ({ ...s, strokeWidth: width })),
-      history: [...history.slice(-MAX_HISTORY), shapes],
-      future: [],
-    });
-  },
+  // reflects what the sidebar shows. Not pushed to history — undo/redo is
+  // scoped to shape additions only, avoiding sidebar/canvas colour desync.
+  setFillColor: (color: string) =>
+    set((s) => ({ fillColor: color, shapes: s.shapes.map((sh) => ({ ...sh, fill: color })) })),
+  setStrokeColor: (color: string) =>
+    set((s) => ({ strokeColor: color, shapes: s.shapes.map((sh) => ({ ...sh, stroke: color })) })),
+  setStrokeWidth: (width: number) =>
+    set((s) => ({ strokeWidth: width, shapes: s.shapes.map((sh) => ({ ...sh, strokeWidth: width })) })),
   setPreviewPoints: (points: Point[]) => set({ previewPoints: points }),
   setCursorPoint: (point: Point | null) => set({ cursorPoint: point }),
 
   undo: () => {
-    const { history, shapes, future } = get();
+    const { history, shapes, future, previewPoints } = get();
+    // While drawing, undo removes the last placed point one at a time
+    if (previewPoints.length > 0) {
+      set({ previewPoints: previewPoints.slice(0, -1) });
+      return;
+    }
     if (history.length === 0) return;
     const previous = history[history.length - 1];
     set({
