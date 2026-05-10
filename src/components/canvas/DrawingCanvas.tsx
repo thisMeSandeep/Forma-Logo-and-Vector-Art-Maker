@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useCanvasEvents } from '../../hooks/useCanvasEvents';
+import { useViewBox } from '../../hooks/useViewBox';
 import { useAppStore } from '../../store/useAppStore';
 import { GridLayer } from './GridLayer';
 import { ShapeLayer } from './ShapeLayer';
@@ -7,12 +8,13 @@ import { PreviewLayer } from './PreviewLayer';
 import { CROSSHAIR_ARM } from '../../config/constants';
 
 export function DrawingCanvas() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  // Crosshair is updated via direct DOM — no React re-render on every pointermove
+  const svgRef       = useRef<SVGSVGElement>(null);
   const crosshairRef = useRef<SVGGElement>(null);
-  useCanvasEvents(svgRef, crosshairRef);
 
-  // hide built-in cursor only when the SVG crosshair is active (draw/cutout)
+  const { viewBoxStr, isInitialized, zoomAt, panBy } = useViewBox(svgRef);
+  useCanvasEvents(svgRef, crosshairRef, zoomAt, panBy);
+
+  // Hide built-in cursor only when the SVG crosshair is active (draw/cutout)
   const activeTool = useAppStore((s) => s.activeTool);
   const cursor = activeTool === 'select' ? 'default' : 'none';
 
@@ -20,12 +22,14 @@ export function DrawingCanvas() {
     <svg
       ref={svgRef}
       className="w-full h-full"
+      // Only set viewBox once we know the real SVG size (avoids a 1-frame scale flash)
+      viewBox={isInitialized ? viewBoxStr : undefined}
       style={{ background: 'var(--canvas-bg)', cursor }}
     >
       <GridLayer />
       <ShapeLayer />
       <PreviewLayer />
-      {/* Crosshair starts hidden; useCanvasEvents drives position and visibility */}
+      {/* Crosshair: translate to world point, scale so arms stay pixel-sized at any zoom */}
       <g
         ref={crosshairRef}
         style={{ pointerEvents: 'none', display: 'none' }}

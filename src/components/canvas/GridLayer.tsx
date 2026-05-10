@@ -12,6 +12,10 @@ export function GridLayer() {
     : <SquareGrid gridSize={gridSize} />;
 }
 
+// A rect this large ensures the pattern covers any pan/zoom position.
+// SVG clips rendering to the viewBox, so there is no performance cost.
+const GRID_EXTENT = 100_000;
+
 function SquareGrid({ gridSize }: { gridSize: number }) {
   // SVG pattern tiles a single cell across the full canvas — no line-count math needed
   return (
@@ -32,7 +36,11 @@ function SquareGrid({ gridSize }: { gridSize: number }) {
           />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+      <rect
+        x={-GRID_EXTENT} y={-GRID_EXTENT}
+        width={GRID_EXTENT * 2} height={GRID_EXTENT * 2}
+        fill="url(#grid-pattern)"
+      />
     </g>
   );
 }
@@ -68,7 +76,11 @@ function IsometricGrid({ gridSize }: { gridSize: number }) {
             stroke="var(--grid-line-stroke)" strokeWidth="var(--grid-line-width)" />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#iso-grid-pattern)" />
+      <rect
+        x={-GRID_EXTENT} y={-GRID_EXTENT}
+        width={GRID_EXTENT * 2} height={GRID_EXTENT * 2}
+        fill="url(#iso-grid-pattern)"
+      />
     </g>
   );
 }

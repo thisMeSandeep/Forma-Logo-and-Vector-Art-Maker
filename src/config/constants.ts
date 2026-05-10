@@ -34,6 +34,14 @@ export const PREVIEW_LINE_STROKE_WIDTH = 1.5;
 // Dash pattern for the rubber-band segment (live preview line to cursor)
 export const PREVIEW_DASH_ARRAY = '4 4';
 
+// Zoom limits (multiplier relative to initial 100% view)
+export const ZOOM_MIN = 0.1;
+export const ZOOM_MAX = 20;
+// Factor applied per mouse-wheel tick (>1 = zoom in)
+export const ZOOM_WHEEL_FACTOR = 1.15;
+// Factor applied per +/− button click
+export const ZOOM_BUTTON_FACTOR = 1.25;
+
 // Whitespace around shapes in exported SVG/PNG (in SVG user units)
 export const EXPORT_PADDING = 16;
 

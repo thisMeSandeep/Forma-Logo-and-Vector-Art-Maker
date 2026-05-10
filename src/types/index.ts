@@ -3,6 +3,8 @@ export type Point = {
   y: number;
 };
 
+export type ViewBox = { x: number; y: number; w: number; h: number };
+
 export type ShapeType = 'draw' | 'cutout';
 
 export type Shape = {
@@ -31,6 +33,8 @@ export type AppState = {
   future: Shape[][];
   previewPoints: Point[];
   cursorPoint: Point | null;
+  viewBox: ViewBox;
+  initialViewBox: ViewBox | null;
 
   // Actions
   addShape: (shape: Shape) => void;
@@ -43,6 +47,10 @@ export type AppState = {
   setStrokeWidth: (width: number) => void;
   setPreviewPoints: (points: Point[]) => void;
   setCursorPoint: (point: Point | null) => void;
+  setViewBox: (vb: ViewBox) => void;
+  setInitialViewBox: (vb: ViewBox) => void;
+  zoomViewport: (factor: number) => void;
+  resetViewport: () => void;
   undo: () => void;
   redo: () => void;
   resetCanvas: () => void;
