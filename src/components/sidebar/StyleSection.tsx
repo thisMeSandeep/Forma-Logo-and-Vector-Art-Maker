@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Palette } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Slider } from '../ui/slider';
-import { STROKE_WIDTH_MIN, STROKE_WIDTH_MAX } from '../../config/constants';
+import {
+  STROKE_WIDTH_MIN,
+  STROKE_WIDTH_MAX,
+  CORNER_RADIUS_MIN,
+  CORNER_RADIUS_MAX,
+} from '../../config/constants';
 import { Section, PropertyRow } from './Section';
 import { NumberField } from './NumberField';
 
@@ -17,10 +22,6 @@ type ColorRowProps = {
 // Editor-style color row: swatch + hex input, both open the picker.
 function ColorRow({ label, value, onChange }: ColorRowProps) {
   const [draft, setDraft] = useState(value.replace('#', '').toUpperCase());
-
-  useEffect(() => {
-    setDraft(value.replace('#', '').toUpperCase());
-  }, [value]);
 
   function commitHex() {
     const cleaned = draft.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
@@ -76,14 +77,16 @@ export function StyleSection() {
   const fillColor = useAppStore((s) => s.fillColor);
   const strokeColor = useAppStore((s) => s.strokeColor);
   const strokeWidth = useAppStore((s) => s.strokeWidth);
+  const cornerRadius = useAppStore((s) => s.cornerRadius);
   const setFillColor = useAppStore((s) => s.setFillColor);
   const setStrokeColor = useAppStore((s) => s.setStrokeColor);
   const setStrokeWidth = useAppStore((s) => s.setStrokeWidth);
+  const setCornerRadius = useAppStore((s) => s.setCornerRadius);
 
   return (
     <Section title="Style" icon={<Palette size={11} />}>
-      <ColorRow label="Fill"   value={fillColor}   onChange={setFillColor} />
-      <ColorRow label="Stroke" value={strokeColor} onChange={setStrokeColor} />
+      <ColorRow key={`fill-${fillColor}`} label="Fill" value={fillColor} onChange={setFillColor} />
+      <ColorRow key={`stroke-${strokeColor}`} label="Stroke" value={strokeColor} onChange={setStrokeColor} />
 
       <PropertyRow label="Width">
         <NumberField
@@ -102,6 +105,26 @@ export function StyleSection() {
         step={0.5}
         value={[strokeWidth]}
         onValueChange={([val]) => setStrokeWidth(val)}
+        className="mt-2"
+      />
+
+      <PropertyRow label="Radius">
+        <NumberField
+          value={cornerRadius}
+          onChange={setCornerRadius}
+          min={CORNER_RADIUS_MIN}
+          max={CORNER_RADIUS_MAX}
+          step={1}
+          suffix="px"
+        />
+      </PropertyRow>
+
+      <Slider
+        min={CORNER_RADIUS_MIN}
+        max={CORNER_RADIUS_MAX}
+        step={1}
+        value={[cornerRadius]}
+        onValueChange={([val]) => setCornerRadius(val)}
         className="mt-2"
       />
     </Section>

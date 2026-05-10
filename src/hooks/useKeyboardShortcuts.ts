@@ -27,7 +27,17 @@ export function useKeyboardShortcuts() {
       // Escape cancels the in-progress polygon without committing it
       if (e.key === 'Escape') {
         e.preventDefault();
-        useAppStore.getState().setPreviewPoints([]);
+        const store = useAppStore.getState();
+        store.setPreviewPoints([]);
+        store.setEditingTextId(null);
+        store.setSelectedTextId(null);
+      }
+
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        const store = useAppStore.getState();
+        if (!store.selectedTextId) return;
+        e.preventDefault();
+        store.deleteText(store.selectedTextId);
       }
     }
 

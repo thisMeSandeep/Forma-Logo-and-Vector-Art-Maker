@@ -1,18 +1,30 @@
-import type { Shape, Point } from '../types';
+import type { Shape, TextItem } from '../types';
 import { EXPORT_PADDING, EXPORT_PNG_SCALE } from '../config/constants';
+import { roundedRingToD } from './svgPath';
 
-// Converts one ring of points to an SVG path data segment
-function ringToD(ring: Point[]): string {
-  if (ring.length < 2) return '';
-  return (
-    `M${ring[0].x},${ring[0].y} ` +
-    ring.slice(1).map((p) => `L${p.x},${p.y}`).join(' ') +
-    ' Z'
-  );
+function textWidth(text: TextItem) {
+  return Math.max(text.fontSize * 2, text.content.length * text.fontSize * 0.62);
 }
 
-// Computes the axis-aligned bounding box over all rings of all shapes
-function getBoundingBox(shapes: Shape[]): { x: number; y: number; w: number; h: number } {
+function textAnchorOffset(text: TextItem, width: number) {
+  if (text.anchor === 'middle') return -width / 2;
+  if (text.anchor === 'end') return -width;
+  return 0;
+}
+
+function escapeXml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Computes the axis-aligned bounding box over all canvas content
+function getBoundingBox(
+  shapes: Shape[],
+  texts: TextItem[],
+): { x: number; y: number; w: number; h: number } {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const shape of shapes) {
     for (const ring of shape.points) {
@@ -24,6 +36,21 @@ function getBoundingBox(shapes: Shape[]): { x: number; y: number; w: number; h: 
       }
     }
   }
+
+  for (const text of texts) {
+    const width = textWidth(text);
+    const x = text.x + textAnchorOffset(text, width);
+    const y = text.y - text.fontSize;
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + width);
+    maxY = Math.max(maxY, y + text.fontSize * 1.4);
+  }
+
+  if (!Number.isFinite(minX)) {
+    return { x: 0, y: 0, w: 1, h: 1 };
+  }
+
   return {
     x: minX - EXPORT_PADDING,
     y: minY - EXPORT_PADDING,
@@ -33,19 +60,27 @@ function getBoundingBox(shapes: Shape[]): { x: number; y: number; w: number; h: 
 }
 
 // Builds a standalone SVG string containing only the shapes (no grid)
-function buildShapesSVG(shapes: Shape[]): string {
-  const { x, y, w, h } = getBoundingBox(shapes);
+function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
+  const { x, y, w, h } = getBoundingBox(shapes, texts);
 
   const pathMarkup = shapes
     .map((shape) => {
-      const d = shape.points.map(ringToD).join(' ');
-      return `  <path d="${d}" fill-rule="evenodd" fill="${shape.fill}" stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" />`;
+      const r = shape.cornerRadius ?? 0;
+      const d = shape.points.map((ring) => roundedRingToD(ring, r)).join(' ');
+      return `  <path d="${d}" fill-rule="evenodd" fill="${shape.fill}" stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" stroke-linejoin="round" />`;
     })
+    .join('\n');
+
+  const textMarkup = texts
+    .map((text) =>
+      `  <text x="${text.x}" y="${text.y}" text-anchor="${text.anchor}" font-family="${escapeXml(text.fontFamily)}" font-size="${text.fontSize}" font-weight="${text.fontWeight}" fill="${escapeXml(text.fill)}">${escapeXml(text.content)}</text>`,
+    )
     .join('\n');
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${w}" height="${h}">`,
     pathMarkup,
+    textMarkup,
     `</svg>`,
   ].join('\n');
 }
@@ -57,19 +92,19 @@ function triggerDownload(url: string, filename: string): void {
   a.click();
 }
 
-export function exportSVG(shapes: Shape[]): void {
-  if (shapes.length === 0) return;
-  const svgString = buildShapesSVG(shapes);
+export function exportSVG(shapes: Shape[], texts: TextItem[]): void {
+  if (shapes.length === 0 && texts.length === 0) return;
+  const svgString = buildShapesSVG(shapes, texts);
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
   triggerDownload(url, 'forma-export.svg');
   URL.revokeObjectURL(url);
 }
 
-export function exportPNG(shapes: Shape[]): void {
-  if (shapes.length === 0) return;
-  const svgString = buildShapesSVG(shapes);
-  const { w, h } = getBoundingBox(shapes);
+export function exportPNG(shapes: Shape[], texts: TextItem[]): void {
+  if (shapes.length === 0 && texts.length === 0) return;
+  const svgString = buildShapesSVG(shapes, texts);
+  const { w, h } = getBoundingBox(shapes, texts);
 
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);

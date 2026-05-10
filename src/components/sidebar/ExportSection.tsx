@@ -5,7 +5,8 @@ import { Section } from './Section';
 
 export function ExportSection() {
   const shapes = useAppStore((s) => s.shapes);
-  const isEmpty = shapes.length === 0;
+  const texts = useAppStore((s) => s.texts);
+  const isEmpty = shapes.length === 0 && texts.length === 0;
 
   return (
     <Section title="Export" icon={<Share2 size={11} />}>
@@ -14,14 +15,14 @@ export function ExportSection() {
           label="SVG"
           icon={<FileCode2 size={14} />}
           disabled={isEmpty}
-          onClick={() => exportSVG(shapes)}
+          onClick={() => exportSVG(shapes, texts)}
           title={isEmpty ? 'Draw something first' : 'Download as SVG'}
         />
         <ExportButton
           label="PNG"
           icon={<Image size={14} />}
           disabled={isEmpty}
-          onClick={() => exportPNG(shapes)}
+          onClick={() => exportPNG(shapes, texts)}
           title={isEmpty ? 'Draw something first' : 'Download as PNG (2×)'}
         />
       </div>

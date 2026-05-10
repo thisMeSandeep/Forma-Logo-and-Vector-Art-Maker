@@ -1,6 +1,7 @@
 import { BrushSection } from './BrushSection';
 import { GridSection } from './GridSection';
 import { StyleSection } from './StyleSection';
+import { TextSection } from './TextSection';
 import { ExportSection } from './ExportSection';
 
 type Props = {
@@ -42,6 +43,9 @@ export function Sidebar({ isOpen }: Props) {
           </div>
           <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
             <StyleSection />
+          </div>
+          <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
+            <TextSection />
           </div>
           <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
             <ExportSection />

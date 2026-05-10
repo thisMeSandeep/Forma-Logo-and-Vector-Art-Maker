@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 type Props = {
   value: number;
@@ -20,23 +20,20 @@ export function NumberField({
   suffix = '',
   className = '',
 }: Props) {
-  const [draft, setDraft] = useState(String(value));
-
-  useEffect(() => {
-    setDraft(String(value));
-  }, [value]);
+  const [draftState, setDraftState] = useState({ value, draft: String(value) });
+  const draft = draftState.value === value ? draftState.draft : String(value);
 
   function commit() {
     const n = parseFloat(draft);
     if (Number.isNaN(n)) {
-      setDraft(String(value));
+      setDraftState({ value, draft: String(value) });
       return;
     }
     let clamped = n;
     if (min != null) clamped = Math.max(min, clamped);
     if (max != null) clamped = Math.min(max, clamped);
     onChange(clamped);
-    setDraft(String(clamped));
+    setDraftState({ value: clamped, draft: String(clamped) });
   }
 
   return (
@@ -50,12 +47,12 @@ export function NumberField({
         min={min}
         max={max}
         step={step}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => setDraftState({ value, draft: e.target.value })}
         onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           if (e.key === 'Escape') {
-            setDraft(String(value));
+            setDraftState({ value, draft: String(value) });
             (e.target as HTMLInputElement).blur();
           }
         }}

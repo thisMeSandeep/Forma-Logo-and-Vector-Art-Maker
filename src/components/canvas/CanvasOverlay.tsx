@@ -4,6 +4,7 @@ import { ZOOM_BUTTON_FACTOR } from '../../config/constants';
 
 export function CanvasOverlay() {
   const shapes         = useAppStore((s) => s.shapes);
+  const texts          = useAppStore((s) => s.texts);
   const previewPoints  = useAppStore((s) => s.previewPoints);
   const activeTool     = useAppStore((s) => s.activeTool);
   const gridMode       = useAppStore((s) => s.gridMode);
@@ -14,7 +15,8 @@ export function CanvasOverlay() {
   const zoomViewport   = useAppStore((s) => s.zoomViewport);
   const resetViewport  = useAppStore((s) => s.resetViewport);
 
-  const isEmpty = shapes.length === 0 && previewPoints.length === 0;
+  const itemCount = shapes.length + texts.length;
+  const isEmpty = itemCount === 0 && previewPoints.length === 0;
   const zoom = initialViewBox ? initialViewBox.w / viewBox.w : 1;
   const zoomPct = Math.round(zoom * 100);
 
@@ -25,7 +27,7 @@ export function CanvasOverlay() {
       {isEmpty && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <p className="text-sm select-none text-muted-foreground opacity-50">
-            Click to start drawing
+            {activeTool === 'text' ? 'Click to place text' : 'Click to start drawing'}
           </p>
         </div>
       )}
@@ -38,8 +40,8 @@ export function CanvasOverlay() {
         {/* Left: canvas metadata */}
         <div className="flex items-stretch h-full pointer-events-none">
           <StatusChip icon={<Layers size={11} />}>
-            <span className="tabular-nums">{shapes.length}</span>
-            <span className="opacity-60">{shapes.length === 1 ? 'shape' : 'shapes'}</span>
+            <span className="tabular-nums">{itemCount}</span>
+            <span className="opacity-60">{itemCount === 1 ? 'item' : 'items'}</span>
           </StatusChip>
 
           <Divider />

@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { snapToSquare, snapToIsometric, distance } from '../lib/geometry';
 import { CLOSE_SNAP_RADIUS, ZOOM_WHEEL_FACTOR } from '../config/constants';
 import { screenToWorld } from './useViewBox';
-import type { Shape } from '../types';
+import type { Shape, TextItem } from '../types';
 
 export function useCanvasEvents(
   svgRef: React.RefObject<SVGSVGElement | null>,
@@ -19,6 +19,12 @@ export function useCanvasEvents(
   const fillColorRef   = useRef(useAppStore.getState().fillColor);
   const strokeColorRef = useRef(useAppStore.getState().strokeColor);
   const strokeWidthRef = useRef(useAppStore.getState().strokeWidth);
+  const cornerRadiusRef = useRef(useAppStore.getState().cornerRadius);
+  const textFontFamilyRef = useRef(useAppStore.getState().textFontFamily);
+  const textFontSizeRef = useRef(useAppStore.getState().textFontSize);
+  const textFontWeightRef = useRef(useAppStore.getState().textFontWeight);
+  const textFillRef = useRef(useAppStore.getState().textFill);
+  const textAnchorRef = useRef(useAppStore.getState().textAnchor);
   const activeToolRef  = useRef(useAppStore.getState().activeTool);
 
   // Refs for stable callbacks (these don't change identity after mount)
@@ -38,6 +44,12 @@ export function useCanvasEvents(
       fillColorRef.current   = s.fillColor;
       strokeColorRef.current = s.strokeColor;
       strokeWidthRef.current = s.strokeWidth;
+      cornerRadiusRef.current = s.cornerRadius;
+      textFontFamilyRef.current = s.textFontFamily;
+      textFontSizeRef.current = s.textFontSize;
+      textFontWeightRef.current = s.textFontWeight;
+      textFillRef.current = s.textFill;
+      textAnchorRef.current = s.textAnchor;
       activeToolRef.current  = s.activeTool;
     }),
   []);
@@ -51,6 +63,10 @@ export function useCanvasEvents(
       const rect = svg!.getBoundingClientRect();
       const vb = useAppStore.getState().viewBox;
       return screenToWorld(e.clientX, e.clientY, rect, vb);
+    }
+
+    function isTextInteraction(e: PointerEvent) {
+      return e.target instanceof Element && e.target.closest('[data-text-interaction="true"]');
     }
 
     function onPointerMove(e: PointerEvent) {
@@ -76,7 +92,7 @@ export function useCanvasEvents(
 
       // Move crosshair in world space, scaled so arms stay a fixed pixel size
       if (crosshairRef.current) {
-        if (activeToolRef.current !== 'select') {
+        if (activeToolRef.current === 'draw' || activeToolRef.current === 'cutout') {
           const rect = svg!.getBoundingClientRect();
           const vb   = useAppStore.getState().viewBox;
           // scale factor: 1 local unit = 1 screen pixel at any zoom level
@@ -112,7 +128,32 @@ export function useCanvasEvents(
       // Only primary button handles drawing
       if (e.button !== 0) return;
 
+      if (isTextInteraction(e)) return;
+
       const world   = getWorldPoint(e);
+
+      if (activeToolRef.current === 'text') {
+        const text: TextItem = {
+          id: crypto.randomUUID(),
+          x: world.x,
+          y: world.y,
+          content: 'Text',
+          fontSize: textFontSizeRef.current,
+          fontFamily: textFontFamilyRef.current,
+          fontWeight: textFontWeightRef.current,
+          fill: textFillRef.current,
+          anchor: textAnchorRef.current,
+        };
+        useAppStore.getState().addText(text);
+        setCursorPoint(null);
+        return;
+      }
+
+      if (activeToolRef.current === 'select') {
+        useAppStore.getState().setSelectedTextId(null);
+        return;
+      }
+
       const snap    = gridModeRef.current === 'square' ? snapToSquare : snapToIsometric;
       const snapped = snap(world, gridSizeRef.current);
       const { previewPoints, addShape, setPreviewPoints } = useAppStore.getState();
@@ -131,6 +172,7 @@ export function useCanvasEvents(
             fill:        fillColorRef.current,
             stroke:      strokeColorRef.current,
             strokeWidth: strokeWidthRef.current,
+            cornerRadius: cornerRadiusRef.current,
             type: 'draw',
           };
           addShape(shape);

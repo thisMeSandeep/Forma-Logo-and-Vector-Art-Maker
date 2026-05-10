@@ -4,6 +4,7 @@ import { useViewBox } from '../../hooks/useViewBox';
 import { useAppStore } from '../../store/useAppStore';
 import { GridLayer } from './GridLayer';
 import { ShapeLayer } from './ShapeLayer';
+import { TextLayer } from './TextLayer';
 import { PreviewLayer } from './PreviewLayer';
 import { CROSSHAIR_ARM } from '../../config/constants';
 
@@ -16,7 +17,7 @@ export function DrawingCanvas() {
 
   // Hide built-in cursor only when the SVG crosshair is active (draw/cutout)
   const activeTool = useAppStore((s) => s.activeTool);
-  const cursor = activeTool === 'select' ? 'default' : 'none';
+  const cursor = activeTool === 'draw' || activeTool === 'cutout' ? 'none' : 'default';
 
   return (
     <svg
@@ -28,6 +29,7 @@ export function DrawingCanvas() {
     >
       <GridLayer />
       <ShapeLayer />
+      <TextLayer />
       <PreviewLayer />
       {/* Crosshair: translate to world point, scale so arms stay pixel-sized at any zoom */}
       <g

@@ -1,4 +1,4 @@
-import { Pencil, Scissors, Brush } from 'lucide-react';
+import { Pencil, Scissors, Type, Brush } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Section } from './Section';
 import type { Tool } from '../../types';
@@ -6,6 +6,7 @@ import type { Tool } from '../../types';
 const TOOLS: { value: Tool; label: string; icon: typeof Pencil; description: string }[] = [
   { value: 'draw',   label: 'Draw',   icon: Pencil,   description: 'Add filled polygons' },
   { value: 'cutout', label: 'Cutout', icon: Scissors, description: 'Subtract from existing shapes' },
+  { value: 'text',   label: 'Text',   icon: Type,     description: 'Place text labels' },
 ];
 
 export function BrushSection() {

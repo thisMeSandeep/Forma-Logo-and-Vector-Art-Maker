@@ -1,4 +1,4 @@
-import { Pencil, Scissors } from 'lucide-react';
+import { Pencil, Scissors, Type } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import type { Tool } from '../../types';
@@ -8,6 +8,7 @@ type ToolEntry = { value: Tool; Icon: LucideIcon; label: string };
 const TOOLS: ToolEntry[] = [
   { value: 'draw',   Icon: Pencil,   label: 'Draw' },
   { value: 'cutout', Icon: Scissors, label: 'Cutout' },
+  { value: 'text',   Icon: Type,     label: 'Text' },
 ];
 
 export function ToolFloater() {
