@@ -48,3 +48,7 @@ export const EXPORT_PADDING = 16;
 
 // Pixel scale multiplier for PNG export (higher = sharper output)
 export const EXPORT_PNG_SCALE = 2;
+
+// Fill opacity applied to existing shapes while the cutout tool is active —
+// lets the user see grid intersections inside shapes for snapping
+export const CUTOUT_FILL_OPACITY = 0.55;

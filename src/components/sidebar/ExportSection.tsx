@@ -1,39 +1,57 @@
-import { Download, Image } from 'lucide-react';
+import { FileCode2, Image, Share2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { exportSVG, exportPNG } from '../../lib/exportUtils';
-import { Button } from '../ui/button';
+import { Section } from './Section';
 
 export function ExportSection() {
   const shapes = useAppStore((s) => s.shapes);
   const isEmpty = shapes.length === 0;
 
   return (
-    <section>
-      <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3">Export</p>
-      <div className="flex flex-col gap-2">
-        <Button
-          variant="outline"
-          size="sm"
+    <Section title="Export" icon={<Share2 size={11} />}>
+      <div className="grid grid-cols-2 gap-2">
+        <ExportButton
+          label="SVG"
+          icon={<FileCode2 size={14} />}
           disabled={isEmpty}
           onClick={() => exportSVG(shapes)}
-          className="w-full justify-start gap-2"
           title={isEmpty ? 'Draw something first' : 'Download as SVG'}
-        >
-          <Download size={14} />
-          Export SVG
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
+        />
+        <ExportButton
+          label="PNG"
+          icon={<Image size={14} />}
           disabled={isEmpty}
           onClick={() => exportPNG(shapes)}
-          className="w-full justify-start gap-2"
           title={isEmpty ? 'Draw something first' : 'Download as PNG (2×)'}
-        >
-          <Image size={14} />
-          Export PNG
-        </Button>
+        />
       </div>
-    </section>
+    </Section>
+  );
+}
+
+function ExportButton({
+  label,
+  icon,
+  disabled,
+  onClick,
+  title,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  disabled: boolean;
+  onClick: () => void;
+  title: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="h-16 flex flex-col items-center justify-center gap-1.5 rounded-md border bg-foreground/[0.02] text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-foreground/[0.02]"
+      style={{ borderColor: 'var(--panel-border)' }}
+    >
+      {icon}
+      <span className="text-[10px] font-medium tracking-wide">{label}</span>
+    </button>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { snapToSquare, snapToIsometric, distance } from '../lib/geometry';
-import { CLOSE_SNAP_RADIUS, CROSSHAIR_ARM, ZOOM_WHEEL_FACTOR } from '../config/constants';
+import { CLOSE_SNAP_RADIUS, ZOOM_WHEEL_FACTOR } from '../config/constants';
 import { screenToWorld } from './useViewBox';
 import type { Shape } from '../types';
 
@@ -105,7 +105,7 @@ export function useCanvasEvents(
         e.preventDefault();
         isPanningRef.current  = true;
         lastPanPosRef.current = { x: e.clientX, y: e.clientY };
-        svg.setPointerCapture(e.pointerId);
+        svg!.setPointerCapture(e.pointerId);
         return;
       }
 
@@ -145,7 +145,7 @@ export function useCanvasEvents(
     function onPointerUp(e: PointerEvent) {
       if (e.button === 1 && isPanningRef.current) {
         isPanningRef.current = false;
-        svg.releasePointerCapture(e.pointerId);
+        svg!.releasePointerCapture(e.pointerId);
       }
     }
 

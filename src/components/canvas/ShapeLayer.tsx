@@ -1,5 +1,6 @@
 import type { Point } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
+import { CUTOUT_FILL_OPACITY } from '../../config/constants';
 
 // Converts one ring to an SVG path segment ("M x,y L x,y ... Z")
 function ringToD(ring: Point[]): string {
@@ -9,7 +10,11 @@ function ringToD(ring: Point[]): string {
 }
 
 export function ShapeLayer() {
-  const shapes = useAppStore((s) => s.shapes);
+  const shapes     = useAppStore((s) => s.shapes);
+  const activeTool = useAppStore((s) => s.activeTool);
+
+  // Soften fills while cutting so grid intersections inside shapes are visible
+  const fillOpacity = activeTool === 'cutout' ? CUTOUT_FILL_OPACITY : 1;
 
   return (
     <g id="shape-layer">
@@ -20,6 +25,7 @@ export function ShapeLayer() {
           d={shape.points.map(ringToD).join(' ')}
           fillRule="evenodd"
           fill={shape.fill}
+          fillOpacity={fillOpacity}
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}
         />

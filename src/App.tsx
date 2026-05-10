@@ -3,6 +3,7 @@ import { TopBar } from './components/toolbar/TopBar';
 import { DrawingCanvas } from './components/canvas/DrawingCanvas';
 import { CanvasOverlay } from './components/canvas/CanvasOverlay';
 import { ToolFloater } from './components/toolbar/ToolFloater';
+import { HistoryBar } from './components/toolbar/HistoryBar';
 import { Sidebar } from './components/sidebar/Sidebar';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
@@ -21,6 +22,7 @@ export default function App() {
         <div className="relative flex-1 overflow-hidden">
           <DrawingCanvas />
           <ToolFloater />
+          <HistoryBar />
           <CanvasOverlay />
         </div>
         <Sidebar isOpen={sidebarOpen} />

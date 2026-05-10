@@ -1,18 +1,6 @@
-import { Undo2, Redo2, RotateCcw, PanelRight, Sun, Moon } from 'lucide-react';
+import { PanelRight, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useAppStore } from '../../store/useAppStore';
 import { Button } from '../ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '../ui/alert-dialog';
 
 type Props = {
   sidebarOpen: boolean;
@@ -20,83 +8,79 @@ type Props = {
 };
 
 export function TopBar({ sidebarOpen, onToggleSidebar }: Props) {
-  const undo = useAppStore((s) => s.undo);
-  const redo = useAppStore((s) => s.redo);
-  const resetCanvas = useAppStore((s) => s.resetCanvas);
-  const canUndo = useAppStore((s) => s.history.length > 0 || s.previewPoints.length > 0);
-  const canRedo = useAppStore((s) => s.future.length > 0);
   const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   return (
     <header
-      className="h-10 flex items-center px-4 gap-3 shrink-0 border-b"
-      style={{ background: 'var(--topbar-bg)', borderColor: 'var(--panel-border)' }}
+      className="h-11 flex items-center px-4 gap-3 shrink-0 border-b backdrop-blur-md"
+      style={{
+        background: 'var(--topbar-bg)',
+        borderColor: 'var(--panel-border)',
+      }}
     >
-      <span className="text-sm font-semibold tracking-tight">Forma</span>
+      {/* Brand mark + name */}
+      <div className="flex items-center gap-2 select-none">
+        <BrandMark />
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-sm font-semibold tracking-tight">Forma</span>
+          <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70">
+            Studio
+          </span>
+        </div>
+      </div>
 
-      <div className="w-px h-4 opacity-20 bg-current" />
-
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={undo}
-        disabled={!canUndo}
-        title="Undo (Ctrl+Z)"
+      {/* Right cluster: theme + sidebar in a subtle pill */}
+      <div
+        className="ml-auto flex items-center gap-0.5 p-0.5 rounded-md border"
+        style={{ borderColor: 'var(--panel-border)' }}
       >
-        <Undo2 size={14} />
-      </Button>
-
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={redo}
-        disabled={!canRedo}
-        title="Redo (Ctrl+Y)"
-      >
-        <Redo2 size={14} />
-      </Button>
-       
-
-      {/* SHOW ALERT ON RESET */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon-sm" title="Reset canvas">
-            <RotateCcw size={14} />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reset canvas?</AlertDialogTitle>
-            <AlertDialogDescription>
-              All shapes will be deleted and undo history cleared. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={resetCanvas}>Reset</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <div className="ml-auto flex items-center gap-1">
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-          title="Toggle theme"
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {resolvedTheme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          {isDark ? <Sun size={14} /> : <Moon size={14} />}
         </Button>
+
+        <div
+          className="w-px h-4"
+          style={{ background: 'var(--panel-border)' }}
+        />
 
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={onToggleSidebar}
           title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+          aria-pressed={sidebarOpen}
         >
           <PanelRight size={14} />
         </Button>
       </div>
     </header>
+  );
+}
+
+// Small geometric mark — an irregular polygon nodding to the grid-drawing theme
+function BrandMark() {
+  return (
+    <span
+      className="inline-flex items-center justify-center w-6 h-6 rounded-md"
+      style={{
+        background: 'linear-gradient(135deg, var(--brand-from, #4f86f7), var(--brand-to, #8b5cf6))',
+        boxShadow: '0 1px 0 0 rgba(255,255,255,0.08) inset, 0 1px 2px rgba(0,0,0,0.18)',
+      }}
+      aria-hidden
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path
+          d="M7 1.5 L12 4.5 L11 11 L3 11 L2 4.5 Z"
+          fill="white"
+          fillOpacity="0.95"
+        />
+      </svg>
+    </span>
   );
 }

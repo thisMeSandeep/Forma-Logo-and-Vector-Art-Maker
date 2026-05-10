@@ -1,6 +1,6 @@
 import { useLayoutEffect, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { ZOOM_MIN, ZOOM_MAX, ZOOM_WHEEL_FACTOR, PAN_SPEED } from '../config/constants';
+import { ZOOM_MIN, ZOOM_MAX, PAN_SPEED } from '../config/constants';
 import type { ViewBox } from '../types';
 
 function clamp(v: number, min: number, max: number) {
@@ -44,7 +44,6 @@ export function useViewBox(svgRef: React.RefObject<SVGSVGElement | null>) {
       const prev = useAppStore.getState().viewBox;
       const base = useAppStore.getState().initialViewBox;
       const baseW = base?.w ?? prev.w;
-      const baseH = base?.h ?? prev.h;
       const newW = clamp(prev.w / factor, baseW / ZOOM_MAX, baseW / ZOOM_MIN);
       const scale = newW / prev.w;
       const newH = prev.h * scale;
