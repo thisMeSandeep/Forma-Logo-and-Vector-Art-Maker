@@ -1,5 +1,4 @@
-// All JS logic constants live here. Visual values (colors, opacities) live in
-// index.css as CSS custom properties so theming is a single-file change.
+// All JS logic constants live here
 
 export const GRID_SIZE_DEFAULT = 40;
 export const GRID_SIZE_MIN = 10;

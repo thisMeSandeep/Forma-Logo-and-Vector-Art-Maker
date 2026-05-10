@@ -55,7 +55,9 @@ export function TopBar({ sidebarOpen, onToggleSidebar }: Props) {
       >
         <Redo2 size={14} />
       </Button>
+       
 
+      {/* SHOW ALERT ON RESET */}
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="ghost" size="icon-sm" title="Reset canvas">
