@@ -226,9 +226,10 @@ Everything that could ever need changing lives here. No magic numbers in compone
 ### Step 5 — Shape Rendering + Sidebar Styles
 - Build `ShapeLayer.tsx` — renders all shapes from store as SVG `<polygon>` elements
 - Connect fill color picker and stroke controls from sidebar to store
-- New shapes use current fill/stroke from store at time of creation
-- Build `StyleSection.tsx` with color pickers (shadcn Popover + color input)
-- **Checkpoint:** Can draw shapes with different fills and strokes
+- Style changes (fill, stroke, stroke width) apply to **all existing shapes immediately** — the sidebar is a global style panel, not a per-shape inspector
+- Each style change is pushed to history so it is undoable
+- Build `StyleSection.tsx` with color pickers (`react-colorful` HexColorPicker inside shadcn Popover)
+- **Checkpoint:** Can draw shapes and freely adjust fill, stroke color, and stroke width — changes reflect instantly on all shapes
 
 ---
 

@@ -11,13 +11,21 @@ export function useCanvasEvents(
   const setCursorPoint = useAppStore((s) => s.setCursorPoint);
 
   // Refs so pointer handlers never go stale without re-attaching
-  const gridSizeRef = useRef(useAppStore.getState().gridSize);
-  const gridModeRef = useRef(useAppStore.getState().gridMode);
+  const gridSizeRef    = useRef(useAppStore.getState().gridSize);
+  const gridModeRef    = useRef(useAppStore.getState().gridMode);
+  const fillColorRef   = useRef(useAppStore.getState().fillColor);
+  const strokeColorRef = useRef(useAppStore.getState().strokeColor);
+  const strokeWidthRef = useRef(useAppStore.getState().strokeWidth);
+  const activeToolRef  = useRef(useAppStore.getState().activeTool);
 
   useEffect(() =>
     useAppStore.subscribe((s) => {
-      gridSizeRef.current = s.gridSize;
-      gridModeRef.current = s.gridMode;
+      gridSizeRef.current    = s.gridSize;
+      gridModeRef.current    = s.gridMode;
+      fillColorRef.current   = s.fillColor;
+      strokeColorRef.current = s.strokeColor;
+      strokeWidthRef.current = s.strokeWidth;
+      activeToolRef.current  = s.activeTool;
     }),
   []);
 
@@ -57,15 +65,8 @@ export function useCanvasEvents(
       const raw = getRawPoint(e);
       const snap = gridModeRef.current === 'square' ? snapToSquare : snapToIsometric;
       const snapped = snap(raw, gridSizeRef.current);
-      const {
-        previewPoints,
-        activeTool,
-        fillColor,
-        strokeColor,
-        strokeWidth,
-        addShape,
-        setPreviewPoints,
-      } = useAppStore.getState();
+      // Read transient state fresh — actions are stable Zustand references
+      const { previewPoints, addShape, setPreviewPoints } = useAppStore.getState();
 
       // Close polygon when clicking near the first point (min 3 points for valid polygon)
       if (
@@ -75,10 +76,10 @@ export function useCanvasEvents(
         const shape: Shape = {
           id: crypto.randomUUID(),
           points: previewPoints,
-          fill: fillColor,
-          stroke: strokeColor,
-          strokeWidth,
-          type: activeTool === 'cutout' ? 'cutout' : 'draw',
+          fill: fillColorRef.current,
+          stroke: strokeColorRef.current,
+          strokeWidth: strokeWidthRef.current,
+          type: activeToolRef.current === 'cutout' ? 'cutout' : 'draw',
         };
         addShape(shape);
         setPreviewPoints([]);

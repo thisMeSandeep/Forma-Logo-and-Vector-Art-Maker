@@ -38,9 +38,36 @@ export const useAppStore = create<AppState>((set, get) => ({
   setGridMode: (mode: GridMode) => set({ gridMode: mode }),
   setGridSize: (size: number) => set({ gridSize: size }),
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
-  setStrokeColor: (color: string) => set({ strokeColor: color }),
-  setFillColor: (color: string) => set({ fillColor: color }),
-  setStrokeWidth: (width: number) => set({ strokeWidth: width }),
+
+  // Style setters update all existing shapes immediately so the canvas always
+  // reflects what the sidebar shows — changes are pushed to history so undo works.
+  setFillColor: (color: string) => {
+    const { shapes, history } = get();
+    set({
+      fillColor: color,
+      shapes: shapes.map((s) => ({ ...s, fill: color })),
+      history: [...history.slice(-MAX_HISTORY), shapes],
+      future: [],
+    });
+  },
+  setStrokeColor: (color: string) => {
+    const { shapes, history } = get();
+    set({
+      strokeColor: color,
+      shapes: shapes.map((s) => ({ ...s, stroke: color })),
+      history: [...history.slice(-MAX_HISTORY), shapes],
+      future: [],
+    });
+  },
+  setStrokeWidth: (width: number) => {
+    const { shapes, history } = get();
+    set({
+      strokeWidth: width,
+      shapes: shapes.map((s) => ({ ...s, strokeWidth: width })),
+      history: [...history.slice(-MAX_HISTORY), shapes],
+      future: [],
+    });
+  },
   setPreviewPoints: (points: Point[]) => set({ previewPoints: points }),
   setCursorPoint: (point: Point | null) => set({ cursorPoint: point }),
 
