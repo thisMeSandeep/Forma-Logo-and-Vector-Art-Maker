@@ -1,75 +1,97 @@
-# React + TypeScript + Vite
+# Forma Studio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, web-based vector design studio built with React and TypeScript. Create, edit, and export vector graphics with an intuitive interface and powerful design tools.
 
-Currently, two official plugins are available:
+![Forma Studio Screenshot](./public/screenshot.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Drawing Tools** - Draw freehand shapes, cut/subtract paths, and add text
+- **Grid System** - Snap to grid for precise alignment and design consistency
+- **Rich Styling** - Customize fill colors, stroke styles, width, and border radius
+- **SVG & PNG Export** - Export your designs in multiple formats
+- **History Management** - Undo/redo support for non-destructive editing
+- **Responsive UI** - Beautiful, intuitive interface with light/dark mode support
+- **Keyboard Shortcuts** - Quick access to tools and common actions
+- **Sidebar Properties** - Real-time property editing with live preview
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Getting Started
 
-Note: This will impact Vite dev & build performances.
+### Prerequisites
 
-## Expanding the ESLint configuration
+- Node.js 18+
+- npm or yarn
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. Clone the repository:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone <repository-url>
+cd gridmark
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Install dependencies:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+3. Start the development server:
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run lint` - Run ESLint
+- `npm run preview` - Preview production build
+
+## Tech Stack
+
+- **Frontend Framework** - React 19 with TypeScript
+- **Styling** - Tailwind CSS 4 with custom animations
+- **Build Tool** - Vite
+- **UI Components** - Base UI, Radix UI, Shadcn
+- **State Management** - Zustand
+- **Vector Operations** - Polygon Clipping
+- **Icons** - Lucide React
+- **Color Picker** - React Colorful
+- **Charting** - Recharts
+- **Notifications** - Sonner
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── canvas/       # Drawing canvas and overlay
+│   ├── toolbar/      # Top bar, tools, and history
+│   └── sidebar/      # Properties and settings panel
+├── hooks/            # Custom React hooks
+├── App.tsx           # Main app component
+└── main.tsx          # Entry point
+```
+
+## Development
+
+This project uses:
+
+- **TypeScript** for type safety
+- **ESLint** for code quality
+- **Tailwind CSS** for responsive styling
+- **Vite** for fast development and builds
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+
+---
+
+Built with ❤️ by Sandeep Singh
