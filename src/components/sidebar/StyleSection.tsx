@@ -21,14 +21,21 @@ type ColorRowProps = {
 
 // Editor-style color row: swatch + hex input, both open the picker.
 function ColorRow({ label, value, onChange }: ColorRowProps) {
-  const [draft, setDraft] = useState(value.replace('#', '').toUpperCase());
+  const [draftState, setDraftState] = useState({
+    value,
+    draft: value.replace('#', '').toUpperCase(),
+  });
+  const draft = draftState.value === value
+    ? draftState.draft
+    : value.replace('#', '').toUpperCase();
 
   function commitHex() {
     const cleaned = draft.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
     if (cleaned.length === 6 || cleaned.length === 3) {
       onChange('#' + cleaned);
+      setDraftState({ value: '#' + cleaned, draft: cleaned.toUpperCase() });
     } else {
-      setDraft(value.replace('#', '').toUpperCase());
+      setDraftState({ value, draft: value.replace('#', '').toUpperCase() });
     }
   }
 
@@ -56,12 +63,12 @@ function ColorRow({ label, value, onChange }: ColorRowProps) {
         <span className="text-[10px] text-muted-foreground/60 px-1 select-none">#</span>
         <input
           value={draft}
-          onChange={(e) => setDraft(e.target.value.toUpperCase())}
+          onChange={(e) => setDraftState({ value, draft: e.target.value.toUpperCase() })}
           onBlur={commitHex}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             if (e.key === 'Escape') {
-              setDraft(value.replace('#', '').toUpperCase());
+              setDraftState({ value, draft: value.replace('#', '').toUpperCase() });
               (e.target as HTMLInputElement).blur();
             }
           }}
@@ -85,8 +92,8 @@ export function StyleSection() {
 
   return (
     <Section title="Style" icon={<Palette size={11} />}>
-      <ColorRow key={`fill-${fillColor}`} label="Fill" value={fillColor} onChange={setFillColor} />
-      <ColorRow key={`stroke-${strokeColor}`} label="Stroke" value={strokeColor} onChange={setStrokeColor} />
+      <ColorRow label="Fill" value={fillColor} onChange={setFillColor} />
+      <ColorRow label="Stroke" value={strokeColor} onChange={setStrokeColor} />
 
       <PropertyRow label="Width">
         <NumberField

@@ -20,14 +20,21 @@ function TextColorRow({
   value: string;
   onChange: (color: string) => void;
 }) {
-  const [draft, setDraft] = useState(value.replace('#', '').toUpperCase());
+  const [draftState, setDraftState] = useState({
+    value,
+    draft: value.replace('#', '').toUpperCase(),
+  });
+  const draft = draftState.value === value
+    ? draftState.draft
+    : value.replace('#', '').toUpperCase();
 
   function commitHex() {
     const cleaned = draft.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
     if (cleaned.length === 6 || cleaned.length === 3) {
       onChange('#' + cleaned);
+      setDraftState({ value: '#' + cleaned, draft: cleaned.toUpperCase() });
     } else {
-      setDraft(value.replace('#', '').toUpperCase());
+      setDraftState({ value, draft: value.replace('#', '').toUpperCase() });
     }
   }
 
@@ -55,12 +62,12 @@ function TextColorRow({
         <span className="text-[10px] text-muted-foreground/60 px-1 select-none">#</span>
         <input
           value={draft}
-          onChange={(e) => setDraft(e.target.value.toUpperCase())}
+          onChange={(e) => setDraftState({ value, draft: e.target.value.toUpperCase() })}
           onBlur={commitHex}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             if (e.key === 'Escape') {
-              setDraft(value.replace('#', '').toUpperCase());
+              setDraftState({ value, draft: value.replace('#', '').toUpperCase() });
               (e.target as HTMLInputElement).blur();
             }
           }}
@@ -159,7 +166,7 @@ export function TextSection() {
         </div>
       </PropertyRow>
 
-      <TextColorRow key={fill} value={fill} onChange={setFill} />
+      <TextColorRow value={fill} onChange={setFill} />
 
       <PropertyRow label="Anchor">
         <div

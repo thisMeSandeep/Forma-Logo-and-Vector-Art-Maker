@@ -4,8 +4,8 @@ export const GRID_SIZE_DEFAULT = 40;
 export const GRID_SIZE_MIN = 10;
 export const GRID_SIZE_MAX = 100;
 
-export const FILL_COLOR_DEFAULT = '#4f86f7';
-export const STROKE_COLOR_DEFAULT = '#ffffff';
+export const FILL_COLOR_DEFAULT = '#2563eb';
+export const STROKE_COLOR_DEFAULT = '#0f172a';
 export const STROKE_WIDTH_DEFAULT = 1.5;
 export const STROKE_WIDTH_MIN = 0;
 export const STROKE_WIDTH_MAX = 10;
@@ -51,7 +51,7 @@ export const ZOOM_BUTTON_FACTOR = 1.25;
 export const PAN_SPEED = 0.6;
 
 // Whitespace around shapes in exported SVG/PNG (in SVG user units)
-export const EXPORT_PADDING = 16;
+export const EXPORT_PADDING = 8;
 
 // Pixel scale multiplier for PNG export (higher = sharper output)
 export const EXPORT_PNG_SCALE = 2;
