@@ -19,11 +19,17 @@ export const MAX_HISTORY = 50;
 // Isometric grid angle in degrees (standard 30° from horizontal)
 export const ISO_ANGLE_DEG = 30;
 
-// Dot drawn at snapped cursor position while drawing
-export const CURSOR_DOT_RADIUS = 4;
+// Half-length of each arm of the crosshair cursor
+export const CROSSHAIR_ARM = 8;
+
+// Radius of the small dot drawn at the snapped grid position
+export const SNAP_DOT_RADIUS = 3;
 
 // First-point highlight ring when polygon is about to close
 export const CLOSE_INDICATOR_RADIUS = 8;
 
 // Preview line style (in-progress polygon edges)
 export const PREVIEW_LINE_STROKE_WIDTH = 1.5;
+
+// Dash pattern for the rubber-band segment (live preview line to cursor)
+export const PREVIEW_DASH_ARRAY = '4 4';
