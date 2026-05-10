@@ -6,6 +6,7 @@ import {
   GRID_SIZE_DEFAULT,
   MAX_HISTORY,
 } from '../config/constants';
+import { shapesOverlap, subtractFromShape } from '../lib/booleanOps';
 import type { AppState, Shape, Tool, GridMode, Point } from '../types';
 
 const initialShapes: Shape[] = [];
@@ -86,4 +87,33 @@ export const useAppStore = create<AppState>((set, get) => ({
       previewPoints: [],
       cursorPoint: null,
     }),
+
+  cutoutShape: (cutterPoints: Point[]) => {
+    const { shapes, history } = get();
+    // Find the topmost shape that overlaps with the cutter (search from end = top)
+    let targetIndex = -1;
+    for (let i = shapes.length - 1; i >= 0; i--) {
+      if (shapesOverlap(shapes[i], cutterPoints)) {
+        targetIndex = i;
+        break;
+      }
+    }
+    // No overlapping shape — discard the cutter silently
+    if (targetIndex === -1) {
+      set({ previewPoints: [] });
+      return;
+    }
+    const resultShapes = subtractFromShape(shapes[targetIndex], cutterPoints);
+    const trimmed = history.slice(-MAX_HISTORY);
+    set({
+      shapes: [
+        ...shapes.slice(0, targetIndex),
+        ...resultShapes,
+        ...shapes.slice(targetIndex + 1),
+      ],
+      history: [...trimmed, shapes],
+      future: [],
+      previewPoints: [],
+    });
+  },
 }));

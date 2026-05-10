@@ -83,15 +83,20 @@ export function useCanvasEvents(
         previewPoints.length >= 3 &&
         distance(snapped, previewPoints[0]) < CLOSE_SNAP_RADIUS
       ) {
-        const shape: Shape = {
-          id: crypto.randomUUID(),
-          points: previewPoints,
-          fill: fillColorRef.current,
-          stroke: strokeColorRef.current,
-          strokeWidth: strokeWidthRef.current,
-          type: activeToolRef.current === 'cutout' ? 'cutout' : 'draw',
-        };
-        addShape(shape);
+        if (activeToolRef.current === 'cutout') {
+          // Boolean subtract: let the store find the target shape and diff it
+          useAppStore.getState().cutoutShape(previewPoints);
+        } else {
+          const shape: Shape = {
+            id: crypto.randomUUID(),
+            points: [previewPoints],  // outer ring; inner rings added by cutout ops
+            fill: fillColorRef.current,
+            stroke: strokeColorRef.current,
+            strokeWidth: strokeWidthRef.current,
+            type: 'draw',
+          };
+          addShape(shape);
+        }
         setPreviewPoints([]);
         return;
       }

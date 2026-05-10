@@ -1,4 +1,12 @@
+import type { Point } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
+
+// Converts one ring to an SVG path segment ("M x,y L x,y ... Z")
+function ringToD(ring: Point[]): string {
+  if (ring.length < 2) return '';
+  return `M${ring[0].x},${ring[0].y} ` +
+    ring.slice(1).map((p) => `L${p.x},${p.y}`).join(' ') + ' Z';
+}
 
 export function ShapeLayer() {
   const shapes = useAppStore((s) => s.shapes);
@@ -6,9 +14,11 @@ export function ShapeLayer() {
   return (
     <g id="shape-layer">
       {shapes.map((shape) => (
-        <polygon
+        // fillRule="evenodd" makes inner rings render as transparent holes
+        <path
           key={shape.id}
-          points={shape.points.map((p) => `${p.x},${p.y}`).join(' ')}
+          d={shape.points.map(ringToD).join(' ')}
+          fillRule="evenodd"
           fill={shape.fill}
           stroke={shape.stroke}
           strokeWidth={shape.strokeWidth}

@@ -1,4 +1,5 @@
 // TODO: Step 10 — make collapsible with smooth transition
+import { BrushSection } from './BrushSection';
 import { GridSection } from './GridSection';
 import { StyleSection } from './StyleSection';
 import { ExportSection } from './ExportSection';
@@ -12,6 +13,8 @@ export function Sidebar() {
         borderColor: 'var(--panel-border)',
       }}
     >
+      <BrushSection />
+      <div className="border-t" style={{ borderColor: 'var(--panel-border)' }} />
       <GridSection />
       <div className="border-t" style={{ borderColor: 'var(--panel-border)' }} />
       <StyleSection />

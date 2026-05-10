@@ -33,3 +33,9 @@ export const PREVIEW_LINE_STROKE_WIDTH = 1.5;
 
 // Dash pattern for the rubber-band segment (live preview line to cursor)
 export const PREVIEW_DASH_ARRAY = '4 4';
+
+// Whitespace around shapes in exported SVG/PNG (in SVG user units)
+export const EXPORT_PADDING = 16;
+
+// Pixel scale multiplier for PNG export (higher = sharper output)
+export const EXPORT_PNG_SCALE = 2;

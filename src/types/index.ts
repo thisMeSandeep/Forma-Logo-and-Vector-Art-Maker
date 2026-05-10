@@ -7,7 +7,7 @@ export type ShapeType = 'draw' | 'cutout';
 
 export type Shape = {
   id: string;
-  points: Point[];
+  points: Point[][];  // first ring = outer boundary; subsequent rings = holes
   fill: string;
   stroke: string;
   strokeWidth: number;
@@ -46,4 +46,5 @@ export type AppState = {
   undo: () => void;
   redo: () => void;
   resetCanvas: () => void;
+  cutoutShape: (cutterPoints: Point[]) => void;
 };

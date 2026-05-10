@@ -1,34 +1,30 @@
-// TODO: Step 8 — implement polygon boolean subtract using polygon-clipping
+import { difference, intersection } from 'polygon-clipping';
+import type { Polygon } from 'polygon-clipping';
 import type { Shape, Point } from '../types';
 
-type Ring = [number, number][];
-type Polygon = Ring[];
-
-function toRing(points: Point[]): Ring {
-  return points.map((p) => [p.x, p.y]);
+function toPolygon(points: Point[][]): Polygon {
+  return points.map((ring) => ring.map((p): [number, number] => [p.x, p.y]));
 }
 
-function fromRing(ring: Ring): Point[] {
-  return ring.map(([x, y]) => ({ x, y }));
+function fromPolygon(poly: Polygon): Point[][] {
+  return poly.map((ring) => ring.map(([x, y]) => ({ x, y })));
 }
 
-// Returns the result of subtracting `cutter` from `base`, as a list of shapes.
-// May return multiple shapes if the cut splits the base.
-export async function subtractShape(
-  base: Shape,
-  cutter: Shape
-): Promise<Shape[]> {
-  const polygonClipping = await import('polygon-clipping');
-  const difference = polygonClipping.default.difference;
+// Returns true if `base` has any overlapping area with `cutterPoints`.
+export function shapesOverlap(base: Shape, cutterPoints: Point[]): boolean {
+  const cutterPoly: Polygon = [cutterPoints.map((p): [number, number] => [p.x, p.y])];
+  return intersection(toPolygon(base.points), cutterPoly).length > 0;
+}
 
-  const basePolygon: Polygon = [toRing(base.points)];
-  const cutterPolygon: Polygon = [toRing(cutter.points)];
-
-  const result = difference(basePolygon, cutterPolygon);
-
-  return result.map((multiPoly, i) => ({
+// Subtracts `cutterPoints` from `base`. Returns the resulting shapes — may be
+// zero shapes (cutter covered all of base), or 2+ (cutter split the base).
+export function subtractFromShape(base: Shape, cutterPoints: Point[]): Shape[] {
+  const cutterPoly: Polygon = [cutterPoints.map((p): [number, number] => [p.x, p.y])];
+  const result = difference(toPolygon(base.points), cutterPoly);
+  return result.map((poly, i) => ({
     ...base,
-    id: i === 0 ? base.id : `${base.id}-${i}`,
-    points: fromRing(multiPoly[0]), // outer ring only
+    id: i === 0 ? base.id : `${base.id}-part${i}`,
+    points: fromPolygon(poly),
+    type: 'draw' as const,
   }));
 }

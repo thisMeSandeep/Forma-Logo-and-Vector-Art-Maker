@@ -280,6 +280,7 @@ Everything that could ever need changing lives here. No magic numbers in compone
 - Keyboard shortcut: `Escape` cancels in-progress polygon
 - Subtle status bar at bottom: shape count, active tool, grid mode
 - Empty state message on canvas: "Click to start drawing"
+- Implement light and dark mode , use next theme.
 - **Checkpoint:** Full UX flow feels smooth, no rough edges
 
 ---
