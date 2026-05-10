@@ -1,7 +1,39 @@
 import type { Point } from '../types';
 
+const EPSILON = 0.001;
+
+function samePoint(a: Point, b: Point) {
+  return Math.hypot(a.x - b.x, a.y - b.y) < EPSILON;
+}
+
+function triangleArea(a: Point, b: Point, c: Point) {
+  return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
+function normalizeRing(ring: Point[]): Point[] {
+  const deduped: Point[] = [];
+  for (const point of ring) {
+    if (deduped.length === 0 || !samePoint(deduped[deduped.length - 1], point)) {
+      deduped.push(point);
+    }
+  }
+
+  if (deduped.length >= 2 && samePoint(deduped[0], deduped[deduped.length - 1])) {
+    deduped.pop();
+  }
+
+  if (deduped.length < 3) return deduped;
+
+  return deduped.filter((point, index) => {
+    const prev = deduped[(index - 1 + deduped.length) % deduped.length];
+    const next = deduped[(index + 1) % deduped.length];
+    return Math.abs(triangleArea(prev, point, next)) > EPSILON;
+  });
+}
+
 // Converts a ring of points to a sharp-cornered SVG path
 export function ringToD(ring: Point[]): string {
+  ring = normalizeRing(ring);
   if (ring.length < 2) return '';
   return (
     `M${ring[0].x},${ring[0].y} ` +
@@ -16,34 +48,35 @@ export function ringToD(ring: Point[]): string {
 // the adjacent edges. The radius is clamped so it never exceeds half of
 // either neighbouring edge length.
 export function roundedRingToD(ring: Point[], radius: number): string {
-  // polygon-clipping returns closed rings (first point repeated at the end).
-  // Strip the trailing duplicate so neighbouring-edge math is correct at the seam.
-  if (
-    ring.length >= 2 &&
-    ring[0].x === ring[ring.length - 1].x &&
-    ring[0].y === ring[ring.length - 1].y
-  ) {
-    ring = ring.slice(0, -1);
-  }
+  ring = normalizeRing(ring);
 
   if (ring.length < 3 || radius <= 0) return ringToD(ring);
 
   const n = ring.length;
-  const corners = ring.map((v, i) => {
+  const corners = ring.map((vertex, i) => {
     const prev = ring[(i - 1 + n) % n];
     const next = ring[(i + 1) % n];
-    const inX = v.x - prev.x, inY = v.y - prev.y;
-    const outX = next.x - v.x, outY = next.y - v.y;
+    const inX = vertex.x - prev.x, inY = vertex.y - prev.y;
+    const outX = next.x - vertex.x, outY = next.y - vertex.y;
     const lIn = Math.hypot(inX, inY);
     const lOut = Math.hypot(outX, outY);
-    // Clamp so the curve stays within each edge
+
+    if (lIn < EPSILON || lOut < EPSILON) {
+      return { vertex, start: vertex, end: vertex, rounded: false };
+    }
+
     const r = Math.min(radius, lIn / 2, lOut / 2);
-    const tIn = lIn === 0 ? 0 : r / lIn;
-    const tOut = lOut === 0 ? 0 : r / lOut;
+    if (r < EPSILON) {
+      return { vertex, start: vertex, end: vertex, rounded: false };
+    }
+
+    const tIn = r / lIn;
+    const tOut = r / lOut;
     return {
-      v,
-      start: { x: v.x - inX * tIn,  y: v.y - inY * tIn  },
-      end:   { x: v.x + outX * tOut, y: v.y + outY * tOut },
+      vertex,
+      start: { x: vertex.x - inX * tIn,  y: vertex.y - inY * tIn  },
+      end:   { x: vertex.x + outX * tOut, y: vertex.y + outY * tOut },
+      rounded: true,
     };
   });
 
@@ -52,7 +85,10 @@ export function roundedRingToD(ring: Point[], radius: number): string {
   let d = `M${corners[0].end.x},${corners[0].end.y} `;
   for (let i = 1; i <= n; i++) {
     const c = corners[i % n];
-    d += `L${c.start.x},${c.start.y} Q${c.v.x},${c.v.y} ${c.end.x},${c.end.y} `;
+    d += `L${c.start.x},${c.start.y} `;
+    d += c.rounded
+      ? `Q${c.vertex.x},${c.vertex.y} ${c.end.x},${c.end.y} `
+      : `L${c.end.x},${c.end.y} `;
   }
   return d + 'Z';
 }

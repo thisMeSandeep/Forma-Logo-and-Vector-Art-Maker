@@ -13,13 +13,13 @@ export function Sidebar({ isOpen }: Props) {
     <aside
       className="h-full shrink-0 border-l overflow-hidden transition-all duration-200 ease-in-out flex flex-col"
       style={{
-        width: isOpen ? '17rem' : '0',
+        width: isOpen ? '19rem' : '0',
         borderColor: isOpen ? 'var(--panel-border)' : 'transparent',
         background: 'var(--sidebar-bg)',
       }}
     >
       {/* Fixed-width inner keeps content from compressing during the slide */}
-      <div className="w-[17rem] h-full flex flex-col">
+      <div className="w-[19rem] h-full flex flex-col">
         {/* Panel header strip — editor-style title bar */}
         <div
           className="h-11 px-4 flex items-center justify-between border-b shrink-0 select-none"
