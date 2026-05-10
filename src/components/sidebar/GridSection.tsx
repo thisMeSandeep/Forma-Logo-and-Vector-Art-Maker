@@ -16,12 +16,12 @@ export function GridSection() {
 
   return (
     <section className="flex flex-col gap-3">
-      <p className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
         Grid
       </p>
 
       {/* Square / Isometric toggle */}
-      <div className="flex rounded-md overflow-hidden border border-[var(--panel-border)]">
+      <div className="flex rounded-md overflow-hidden border border-border">
         {MODES.map((mode) => (
           <button
             key={mode.value}
@@ -29,8 +29,8 @@ export function GridSection() {
             className={[
               'flex-1 py-1.5 text-xs font-medium transition-colors',
               gridMode === mode.value
-                ? 'bg-white/10 text-white'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5',
+                ? 'bg-foreground/10 text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5',
             ].join(' ')}
           >
             {mode.label}
@@ -41,8 +41,8 @@ export function GridSection() {
       {/* Grid size slider */}
       <div className="flex flex-col gap-1.5">
         <div className="flex justify-between items-center">
-          <span className="text-xs text-zinc-400">Size</span>
-          <span className="text-xs font-mono text-zinc-300">{gridSize}px</span>
+          <span className="text-xs text-muted-foreground">Size</span>
+          <span className="text-xs font-mono text-foreground">{gridSize}px</span>
         </div>
         <Slider
           min={GRID_SIZE_MIN}

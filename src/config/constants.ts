@@ -38,9 +38,11 @@ export const PREVIEW_DASH_ARRAY = '4 4';
 export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 20;
 // Factor applied per mouse-wheel tick (>1 = zoom in)
-export const ZOOM_WHEEL_FACTOR = 1.15;
+export const ZOOM_WHEEL_FACTOR = 1.07;
 // Factor applied per +/− button click
 export const ZOOM_BUTTON_FACTOR = 1.25;
+// Fraction of the raw screen delta applied per pan frame (0–1, lower = slower)
+export const PAN_SPEED = 0.6;
 
 // Whitespace around shapes in exported SVG/PNG (in SVG user units)
 export const EXPORT_PADDING = 16;
