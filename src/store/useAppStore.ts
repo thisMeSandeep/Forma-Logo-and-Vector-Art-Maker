@@ -17,6 +17,9 @@ import {
   POLYGON_SIDES_DEFAULT,
   STAR_POINTS_DEFAULT,
   STAR_INNER_RATIO_DEFAULT,
+  CANVAS_BG_DEFAULT,
+  ZOOM_MIN,
+  ZOOM_MAX,
 } from '../config/constants';
 import { translateRings } from '../lib/geometry';
 import { alignToCanvasDelta, visualBBox } from '../lib/alignment';
@@ -91,6 +94,8 @@ export const useAppStore = create<AppState>()(
         cursorPoint: null,
         viewBox: DEFAULT_VIEWBOX,
         initialViewBox: null,
+        spaceDown: false,
+        canvasBackground: CANVAS_BG_DEFAULT,
 
         addShape: (shape) =>
           set((s) => ({ shapes: [...s.shapes, shape], history: pushHistory(), future: [] })),
@@ -102,6 +107,63 @@ export const useAppStore = create<AppState>()(
         resetViewport: () => {
           const { initialViewBox } = get();
           if (initialViewBox) set({ viewBox: initialViewBox });
+        },
+
+        // Pan-on-space cursor flag — flipped by useCanvasEvents key listeners.
+        setSpaceDown: (down) => set({ spaceDown: down }),
+        setCanvasBackground: (color) => set({ canvasBackground: color }),
+
+        // Set absolute zoom: 1.0 = 100% (initialViewBox), 2.0 = 200%, etc.
+        setZoomPercent: (pct) => {
+          const { viewBox, initialViewBox } = get();
+          if (!initialViewBox) return;
+          const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct));
+          const newW = initialViewBox.w / clamped;
+          const newH = initialViewBox.h / clamped;
+          const cx = viewBox.x + viewBox.w / 2;
+          const cy = viewBox.y + viewBox.h / 2;
+          set({ viewBox: { x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH } });
+        },
+
+        // Fit all shapes + text into view with a small padding margin.
+        zoomToFitContent: () => {
+          const { shapes, texts, initialViewBox } = get();
+          if (!initialViewBox) return;
+          if (shapes.length === 0 && texts.length === 0) {
+            set({ viewBox: initialViewBox });
+            return;
+          }
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          for (const sh of shapes) {
+            const bbox = visualBBox(sh);
+            minX = Math.min(minX, bbox.x);
+            minY = Math.min(minY, bbox.y);
+            maxX = Math.max(maxX, bbox.x + bbox.w);
+            maxY = Math.max(maxY, bbox.y + bbox.h);
+          }
+          for (const t of texts) {
+            // Rough estimate of text width; matches canvas TextLayer
+            const w = Math.max(t.fontSize * 2, t.content.length * t.fontSize * 0.62);
+            const x = t.anchor === 'middle' ? t.x - w / 2 : t.anchor === 'end' ? t.x - w : t.x;
+            const y = t.y - t.fontSize;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x + w);
+            maxY = Math.max(maxY, y + t.fontSize * 1.4);
+          }
+          if (!Number.isFinite(minX)) return;
+          const pad = 40;
+          const contentW = maxX - minX + pad * 2;
+          const contentH = maxY - minY + pad * 2;
+          // Pick the scale that fits both axes — keep aspect ratio of initial viewbox
+          const aspect = initialViewBox.w / initialViewBox.h;
+          let w = contentW;
+          let h = contentH;
+          if (w / h > aspect) h = w / aspect;
+          else                w = h * aspect;
+          const cx = (minX + maxX) / 2;
+          const cy = (minY + maxY) / 2;
+          set({ viewBox: { x: cx - w / 2, y: cy - h / 2, w, h } });
         },
 
         setActiveTool: (tool) =>
@@ -368,6 +430,7 @@ export const useAppStore = create<AppState>()(
         polygonSides:   state.polygonSides,
         starPointCount: state.starPointCount,
         starInnerRatio: state.starInnerRatio,
+        canvasBackground: state.canvasBackground,
       }),
     },
   ),

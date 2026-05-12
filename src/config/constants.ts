@@ -82,6 +82,9 @@ export const SHADOW_DEFAULT = { x: 0, y: 2, blur: 6, color: '#00000066' };
 export const BLUR_DEFAULT = 4;
 export const GRADIENT_DEFAULT = { from: '#2563eb', to: '#9333ea', angle: 90 };
 
+// Canvas background — independent of UI theme so the design surface can be any color
+export const CANVAS_BG_DEFAULT = '#f5f5f5';
+
 // Text defaults
 export const TEXT_FONT_FAMILY_DEFAULT = 'Geist Variable, system-ui, sans-serif';
 export const TEXT_FONT_SIZE_DEFAULT = 24;

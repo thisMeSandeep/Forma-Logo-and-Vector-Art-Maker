@@ -145,6 +145,8 @@ export type AppState = {
   cursorPoint: Point | null;
   viewBox: ViewBox;
   initialViewBox: ViewBox | null;
+  spaceDown: boolean;
+  canvasBackground: string;
 
   // Shape actions
   addShape: (shape: Shape) => void;
@@ -162,6 +164,10 @@ export type AppState = {
   setDragStart: (point: Point | null) => void;
   setActiveGuides: (guides: import('../lib/alignment').Guide[]) => void;
   alignSelectedToCanvas: (direction: import('../lib/alignment').AlignDirection) => void;
+  setSpaceDown: (down: boolean) => void;
+  setCanvasBackground: (color: string) => void;
+  zoomToFitContent: () => void;
+  setZoomPercent: (pct: number) => void;
   setShiftConstrain: (on: boolean) => void;
   setPolygonSides: (n: number) => void;
   setStarPointCount: (n: number) => void;

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { ZoomIn, ZoomOut, Maximize2, Layers, Grid3x3, Hexagon, MousePointer2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { ZOOM_BUTTON_FACTOR } from '../../config/constants';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 
 export function CanvasOverlay() {
   const shapes         = useAppStore((s) => s.shapes);
@@ -14,6 +16,8 @@ export function CanvasOverlay() {
   const initialViewBox = useAppStore((s) => s.initialViewBox);
   const zoomViewport   = useAppStore((s) => s.zoomViewport);
   const resetViewport  = useAppStore((s) => s.resetViewport);
+  const setZoomPercent = useAppStore((s) => s.setZoomPercent);
+  const zoomToFitContent = useAppStore((s) => s.zoomToFitContent);
 
   const itemCount = shapes.length + texts.length;
   const isEmpty = itemCount === 0 && previewPoints.length === 0;
@@ -75,20 +79,18 @@ export function CanvasOverlay() {
             <ZoomOut size={11} />
           </ZoomBtn>
 
-          <button
-            onClick={resetViewport}
-            className="px-2 h-6 flex items-center justify-center text-[11px] hover:text-foreground hover:bg-foreground/5 transition-colors tabular-nums border-x"
-            style={{ borderColor: 'var(--panel-border)' }}
-            title="Reset zoom to 100%"
-          >
-            {zoomPct}%
-          </button>
+          <ZoomPercentPopover
+            zoomPct={zoomPct}
+            onPick={(pct) => setZoomPercent(pct / 100)}
+            onFit={zoomToFitContent}
+            onReset={resetViewport}
+          />
 
           <ZoomBtn onClick={() => zoomViewport(ZOOM_BUTTON_FACTOR)} title="Zoom in">
             <ZoomIn size={11} />
           </ZoomBtn>
 
-          <ZoomBtn onClick={resetViewport} title="Fit to window">
+          <ZoomBtn onClick={zoomToFitContent} title="Fit content to view">
             <Maximize2 size={11} />
           </ZoomBtn>
         </div>
@@ -132,5 +134,79 @@ function ZoomBtn({
     >
       {children}
     </button>
+  );
+}
+
+// Popover trigger that shows the current zoom and exposes presets + custom %.
+function ZoomPercentPopover({
+  zoomPct,
+  onPick,
+  onFit,
+  onReset,
+}: {
+  zoomPct: number;
+  onPick: (pct: number) => void;
+  onFit: () => void;
+  onReset: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  const presets = [50, 100, 150, 200, 400];
+
+  function commitDraft() {
+    const n = parseFloat(draft);
+    if (!Number.isNaN(n) && n > 0) onPick(n);
+    setDraft('');
+    setOpen(false);
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="px-2 h-6 flex items-center justify-center text-[11px] hover:text-foreground hover:bg-foreground/5 transition-colors tabular-nums border-x"
+          style={{ borderColor: 'var(--panel-border)' }}
+          title="Zoom presets"
+        >
+          {zoomPct}%
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-1" align="end">
+        <div className="flex items-center gap-1 px-1 pb-1 border-b" style={{ borderColor: 'var(--panel-border)' }}>
+          <input
+            type="number"
+            value={draft}
+            placeholder={`${zoomPct}`}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') commitDraft(); }}
+            className="flex-1 h-6 px-1.5 text-[11px] font-mono tabular-nums bg-transparent outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+          <span className="text-[10px] text-muted-foreground pr-1">%</span>
+        </div>
+        <button
+          onClick={() => { onFit(); setOpen(false); }}
+          className="w-full text-left px-2 py-1 text-[11px] rounded hover:bg-foreground/5 transition-colors"
+        >
+          Fit content
+        </button>
+        <button
+          onClick={() => { onReset(); setOpen(false); }}
+          className="w-full text-left px-2 py-1 text-[11px] rounded hover:bg-foreground/5 transition-colors"
+        >
+          Reset view
+        </button>
+        <div className="border-t my-1" style={{ borderColor: 'var(--panel-border)' }} />
+        {presets.map((p) => (
+          <button
+            key={p}
+            onClick={() => { onPick(p); setOpen(false); }}
+            className="w-full text-left px-2 py-1 text-[11px] rounded hover:bg-foreground/5 transition-colors tabular-nums"
+          >
+            {p}%
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 }

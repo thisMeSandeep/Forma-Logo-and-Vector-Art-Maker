@@ -68,12 +68,6 @@ Ideas for features to expand Forma Studio beyond the current draw / cutout / tex
 - **Background color** for the canvas (not just the page).
 <!-- - **Bleed / safe-area** guides for print export. -->
 
-## Grid & Guides
-
-- **Custom guides** — Draggable horizontal/vertical guide lines.
-- **Grid subdivisions** — Major/minor grid lines.
-- **Polar / radial grid** in addition to square and isometric.
-- **Configurable grid color and opacity**.
 
 ## Import / Export
 

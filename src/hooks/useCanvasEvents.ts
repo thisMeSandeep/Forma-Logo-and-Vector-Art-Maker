@@ -186,8 +186,9 @@ export function useCanvasEvents(
     }
 
     function onPointerDown(e: PointerEvent) {
-      // Middle mouse → start pan
-      if (e.button === 1) {
+      // Middle mouse OR Space+left → start pan
+      const isSpacePan = e.button === 0 && useAppStore.getState().spaceDown;
+      if (e.button === 1 || isSpacePan) {
         e.preventDefault();
         isPanningRef.current  = true;
         lastPanPosRef.current = { x: e.clientX, y: e.clientY };
@@ -284,9 +285,13 @@ export function useCanvasEvents(
     }
 
     function onPointerUp(e: PointerEvent) {
-      if (e.button === 1 && isPanningRef.current) {
+      // End pan regardless of which button started it (middle or space+left)
+      if (isPanningRef.current && (e.button === 1 || e.button === 0)) {
         isPanningRef.current = false;
-        svg!.releasePointerCapture(e.pointerId);
+        try { svg!.releasePointerCapture(e.pointerId); } catch { /* not captured */ }
+        if (e.button === 1) return; // middle-mouse only ever does pan
+        // For space+left, fall through to other handlers? Actually no — we
+        // already consumed this click as a pan, so don't trigger drawing logic.
         return;
       }
 
@@ -343,6 +348,19 @@ export function useCanvasEvents(
       }
     }
 
+    function onSpaceKey(e: KeyboardEvent) {
+      if (e.code !== 'Space') return;
+      // Ignore Space when typing in inputs so it doesn't hijack text entry
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      const isDown = e.type === 'keydown';
+      // Prevent page scroll while Space is held for panning
+      if (isDown) e.preventDefault();
+      if (useAppStore.getState().spaceDown !== isDown) {
+        useAppStore.getState().setSpaceDown(isDown);
+      }
+    }
+
     svg.addEventListener('pointermove',  onPointerMove);
     svg.addEventListener('pointerleave', onPointerLeave);
     svg.addEventListener('pointerdown',  onPointerDown);
@@ -351,6 +369,8 @@ export function useCanvasEvents(
     svg.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKey);
+    window.addEventListener('keydown', onSpaceKey);
+    window.addEventListener('keyup', onSpaceKey);
 
     return () => {
       svg.removeEventListener('pointermove',  onPointerMove);
@@ -360,6 +380,8 @@ export function useCanvasEvents(
       svg.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKey);
+      window.removeEventListener('keydown', onSpaceKey);
+      window.removeEventListener('keyup', onSpaceKey);
     };
   }, [svgRef, crosshairRef, setCursorPoint]);
 }

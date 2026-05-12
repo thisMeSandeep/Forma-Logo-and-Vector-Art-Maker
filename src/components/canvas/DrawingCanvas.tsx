@@ -19,9 +19,12 @@ export function DrawingCanvas() {
   useCanvasEvents(svgRef, crosshairRef, zoomAt, panBy);
 
   // Hide built-in cursor only when the SVG crosshair is active (draw/cutout)
-  const activeTool = useAppStore((s) => s.activeTool);
-  const cursor =
-    activeTool === 'draw' || activeTool === 'cutout' || isPrimitiveTool(activeTool)
+  const activeTool       = useAppStore((s) => s.activeTool);
+  const spaceDown        = useAppStore((s) => s.spaceDown);
+  const canvasBackground = useAppStore((s) => s.canvasBackground);
+  const cursor = spaceDown
+    ? 'grab'
+    : activeTool === 'draw' || activeTool === 'cutout' || isPrimitiveTool(activeTool)
       ? 'none'
       : 'default';
 
@@ -31,7 +34,7 @@ export function DrawingCanvas() {
       className="w-full h-full"
       // Only set viewBox once we know the real SVG size (avoids a 1-frame scale flash)
       viewBox={isInitialized ? viewBoxStr : undefined}
-      style={{ background: 'var(--canvas-bg)', cursor }}
+      style={{ background: canvasBackground, cursor }}
     >
       <GridLayer />
       <ShapeLayer />
