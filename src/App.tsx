@@ -8,7 +8,7 @@ import { HistoryBar } from './components/toolbar/HistoryBar';
 import { Sidebar } from './components/sidebar/Sidebar';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
-// Layout shell only — no logic here
+
 export default function App() {
   useKeyboardShortcuts();
   const [sidebarOpen, setSidebarOpen] = useState(true);
