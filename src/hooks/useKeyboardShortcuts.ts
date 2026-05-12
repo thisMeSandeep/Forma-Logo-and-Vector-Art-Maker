@@ -16,28 +16,73 @@ export function useKeyboardShortcuts() {
       if (ctrl && !e.shiftKey && e.key === 'z') {
         e.preventDefault();
         undo();
+        return;
       }
 
       // Ctrl+Y and Ctrl+Shift+Z are both standard redo shortcuts
       if (ctrl && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
         e.preventDefault();
         redo();
+        return;
       }
 
-      // Escape cancels the in-progress polygon without committing it
+      // Escape cancels the in-progress polygon and any selection
       if (e.key === 'Escape') {
         e.preventDefault();
         const store = useAppStore.getState();
         store.setPreviewPoints([]);
         store.setEditingTextId(null);
         store.setSelectedTextId(null);
+        store.setSelectedShapeId(null);
+        return;
       }
 
-      if (e.key === 'Backspace' || e.key === 'Delete') {
-        const store = useAppStore.getState();
-        if (!store.selectedTextId) return;
+      const store = useAppStore.getState();
+
+      // Cmd/Ctrl+D — duplicate selected shape
+      if (ctrl && e.key === 'd' && store.selectedShapeId) {
         e.preventDefault();
-        store.deleteText(store.selectedTextId);
+        store.duplicateShape(store.selectedShapeId);
+        return;
+      }
+
+      // Z-order brackets
+      if (!ctrl && store.selectedShapeId) {
+        if (e.key === ']') {
+          e.preventDefault();
+          store.reorderShape(store.selectedShapeId, e.shiftKey ? 'front' : 'forward');
+          return;
+        }
+        if (e.key === '[') {
+          e.preventDefault();
+          store.reorderShape(store.selectedShapeId, e.shiftKey ? 'back' : 'backward');
+          return;
+        }
+      }
+
+      // Delete — shape takes priority over text
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        if (store.selectedShapeId) {
+          e.preventDefault();
+          store.deleteShape(store.selectedShapeId);
+          return;
+        }
+        if (store.selectedTextId) {
+          e.preventDefault();
+          store.deleteText(store.selectedTextId);
+          return;
+        }
+      }
+
+      // Arrow nudge for selected shape — 1px, Shift = grid step
+      if (store.selectedShapeId && e.key.startsWith('Arrow')) {
+        const step = e.shiftKey ? store.gridSize : 1;
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+        const dy = e.key === 'ArrowUp'   ? -step : e.key === 'ArrowDown'  ? step : 0;
+        if (dx === 0 && dy === 0) return;
+        e.preventDefault();
+        store.moveShape(store.selectedShapeId, dx, dy);
+        store.commitHistory();
       }
     }
 

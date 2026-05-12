@@ -4,6 +4,7 @@ import { useViewBox } from '../../hooks/useViewBox';
 import { useAppStore } from '../../store/useAppStore';
 import { GridLayer } from './GridLayer';
 import { ShapeLayer } from './ShapeLayer';
+import { SelectionHandles } from './SelectionHandles';
 import { TextLayer } from './TextLayer';
 import { PreviewLayer } from './PreviewLayer';
 import { CROSSHAIR_ARM } from '../../config/constants';
@@ -31,6 +32,7 @@ export function DrawingCanvas() {
       <ShapeLayer />
       <TextLayer />
       <PreviewLayer />
+      <SelectionHandles />
       {/* Crosshair: translate to world point, scale so arms stay pixel-sized at any zoom */}
       <g
         ref={crosshairRef}

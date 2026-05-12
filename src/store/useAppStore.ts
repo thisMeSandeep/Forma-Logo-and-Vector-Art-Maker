@@ -16,9 +16,11 @@ import {
   TEXT_ANCHOR_DEFAULT,
 } from '../config/constants';
 import { shapesOverlap, subtractFromShape } from '../lib/booleanOps';
+import { bboxOfRings, translateRings, flipRings } from '../lib/geometry';
 import type {
   AppState,
   Shape,
+  ShapeTransform,
   Tool,
   GridMode,
   Point,
@@ -28,6 +30,7 @@ import type {
   FontWeight,
   CanvasSnapshot,
 } from '../types';
+import { IDENTITY_TRANSFORM } from '../types';
 
 function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
@@ -65,6 +68,7 @@ export const useAppStore = create<AppState>()(
         textFontWeight: TEXT_FONT_WEIGHT_DEFAULT,
         textFill: TEXT_FILL_DEFAULT,
         textAnchor: TEXT_ANCHOR_DEFAULT,
+        selectedShapeId: null,
         selectedTextId: null,
         editingTextId: null,
         history: [] as CanvasSnapshot[],
@@ -104,21 +108,44 @@ export const useAppStore = create<AppState>()(
         setActiveTool: (tool: Tool) =>
           set({
             activeTool: tool,
-            selectedTextId: tool === 'text' ? get().selectedTextId : null,
-            editingTextId: tool === 'text' ? get().editingTextId : null,
+            selectedTextId: tool === 'text' || tool === 'select' ? get().selectedTextId : null,
+            editingTextId: tool === 'text' || tool === 'select' ? get().editingTextId : null,
+            selectedShapeId: tool === 'select' ? get().selectedShapeId : null,
           }),
         setGridMode: (mode: GridMode) => set({ gridMode: mode }),
         setGridSize: (size: number) => set({ gridSize: size }),
         toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
 
+        // Style setters mirror the text pattern: edit a single shape when one is selected,
+        // otherwise update the global default that future shapes inherit.
         setFillColor: (color: string) =>
-          set((s) => ({ fillColor: color, shapes: s.shapes.map((sh) => ({ ...sh, fill: color })) })),
+          set((s) => ({
+            fillColor: color,
+            shapes: s.selectedShapeId
+              ? s.shapes.map((sh) => (sh.id === s.selectedShapeId ? { ...sh, fill: color } : sh))
+              : s.shapes,
+          })),
         setStrokeColor: (color: string) =>
-          set((s) => ({ strokeColor: color, shapes: s.shapes.map((sh) => ({ ...sh, stroke: color })) })),
+          set((s) => ({
+            strokeColor: color,
+            shapes: s.selectedShapeId
+              ? s.shapes.map((sh) => (sh.id === s.selectedShapeId ? { ...sh, stroke: color } : sh))
+              : s.shapes,
+          })),
         setStrokeWidth: (width: number) =>
-          set((s) => ({ strokeWidth: width, shapes: s.shapes.map((sh) => ({ ...sh, strokeWidth: width })) })),
+          set((s) => ({
+            strokeWidth: width,
+            shapes: s.selectedShapeId
+              ? s.shapes.map((sh) => (sh.id === s.selectedShapeId ? { ...sh, strokeWidth: width } : sh))
+              : s.shapes,
+          })),
         setCornerRadius: (r: number) =>
-          set((s) => ({ cornerRadius: r, shapes: s.shapes.map((sh) => ({ ...sh, cornerRadius: r })) })),
+          set((s) => ({
+            cornerRadius: r,
+            shapes: s.selectedShapeId
+              ? s.shapes.map((sh) => (sh.id === s.selectedShapeId ? { ...sh, cornerRadius: r } : sh))
+              : s.shapes,
+          })),
         setPreviewPoints: (points: Point[]) => set({ previewPoints: points }),
         setCursorPoint: (point: Point | null) => set({ cursorPoint: point }),
 
@@ -154,6 +181,7 @@ export const useAppStore = create<AppState>()(
           set({
             shapes: [],
             texts: [],
+            selectedShapeId: null,
             selectedTextId: null,
             editingTextId: null,
             history: [],
@@ -186,6 +214,130 @@ export const useAppStore = create<AppState>()(
             future: [],
             previewPoints: [],
           });
+        },
+
+        // Shape selection & manipulation
+        // Selecting a shape pulls its style into the global style slots so the
+        // sidebar shows the selected shape's values (same trick as setSelectedTextId).
+        setSelectedShapeId: (id: string | null) =>
+          set((s) => {
+            const shape = id ? s.shapes.find((sh) => sh.id === id) : null;
+            return {
+              selectedShapeId: id,
+              // Shape and text selections are mutually exclusive
+              selectedTextId: id ? null : s.selectedTextId,
+              editingTextId:  id ? null : s.editingTextId,
+              fillColor:    shape?.fill         ?? s.fillColor,
+              strokeColor:  shape?.stroke       ?? s.strokeColor,
+              strokeWidth:  shape?.strokeWidth  ?? s.strokeWidth,
+              cornerRadius: shape?.cornerRadius ?? s.cornerRadius,
+            };
+          }),
+
+        updateShape: (id: string, patch: Partial<Shape>) =>
+          set((s) => ({
+            shapes: s.shapes.map((sh) => (sh.id === id ? { ...sh, ...patch } : sh)),
+          })),
+
+        // moveShape is called from drag (many times per second) so it deliberately
+        // skips history. Callers that want a discrete undo entry (arrow-nudge,
+        // drag-end) should call commitHistory() afterwards.
+        moveShape: (id: string, dx: number, dy: number) =>
+          set((s) => ({
+            shapes: s.shapes.map((sh) =>
+              sh.id === id ? { ...sh, points: translateRings(sh.points, dx, dy) } : sh,
+            ),
+          })),
+        commitHistory: () => set({ history: pushHistory(), future: [] }),
+
+        duplicateShape: (id: string) => {
+          const { shapes, gridSize } = get();
+          const source = shapes.find((sh) => sh.id === id);
+          if (!source) return;
+          const offset = gridSize * 2;
+          const copy: Shape = {
+            ...source,
+            id: crypto.randomUUID(),
+            points: translateRings(source.points, offset, offset),
+          };
+          set({
+            shapes: [...shapes, copy],
+            selectedShapeId: copy.id,
+            history: pushHistory(),
+            future: [],
+          });
+        },
+
+        flipShape: (id: string, axis: 'horizontal' | 'vertical') => {
+          const { shapes } = get();
+          const target = shapes.find((sh) => sh.id === id);
+          if (!target) return;
+          const bbox = bboxOfRings(target.points);
+          const center = { x: bbox.x + bbox.w / 2, y: bbox.y + bbox.h / 2 };
+          set({
+            shapes: shapes.map((sh) =>
+              sh.id === id ? { ...sh, points: flipRings(sh.points, axis, center) } : sh,
+            ),
+            history: pushHistory(),
+            future: [],
+          });
+        },
+
+        deleteShape: (id: string) => {
+          set((s) => ({
+            shapes: s.shapes.filter((sh) => sh.id !== id),
+            selectedShapeId: s.selectedShapeId === id ? null : s.selectedShapeId,
+            history: pushHistory(),
+            future: [],
+          }));
+        },
+
+        // Free-form transform: rotation/scale/skew are stored as metadata so they
+        // can be reset cleanly. setShapeTransform skips history (sliders/drag);
+        // resetShapeTransform and rotateShape commit a single entry.
+        setShapeTransform: (id: string, patch: Partial<ShapeTransform>) =>
+          set((s) => ({
+            shapes: s.shapes.map((sh) =>
+              sh.id === id
+                ? { ...sh, transform: { ...(sh.transform ?? IDENTITY_TRANSFORM), ...patch } }
+                : sh,
+            ),
+          })),
+
+        rotateShape: (id: string, deltaDegrees: number) =>
+          set((s) => ({
+            shapes: s.shapes.map((sh) => {
+              if (sh.id !== id) return sh;
+              const current = sh.transform ?? IDENTITY_TRANSFORM;
+              const rotation = ((current.rotation + deltaDegrees) % 360 + 360) % 360;
+              return { ...sh, transform: { ...current, rotation } };
+            }),
+            history: pushHistory(),
+            future: [],
+          })),
+
+        resetShapeTransform: (id: string) =>
+          set((s) => ({
+            shapes: s.shapes.map((sh) => (sh.id === id ? { ...sh, transform: undefined } : sh)),
+            history: pushHistory(),
+            future: [],
+          })),
+
+        reorderShape: (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => {
+          const { shapes } = get();
+          const idx = shapes.findIndex((sh) => sh.id === id);
+          if (idx === -1) return;
+          const next = shapes.slice();
+          const [item] = next.splice(idx, 1);
+          let targetIdx: number;
+          switch (direction) {
+            case 'front':    targetIdx = next.length; break;
+            case 'back':     targetIdx = 0; break;
+            case 'forward':  targetIdx = Math.min(next.length, idx + 1); break;
+            case 'backward': targetIdx = Math.max(0, idx - 1); break;
+          }
+          next.splice(targetIdx, 0, item);
+          set({ shapes: next, history: pushHistory(), future: [] });
         },
 
         // Text actions
@@ -227,6 +379,7 @@ export const useAppStore = create<AppState>()(
             const text = id ? s.texts.find((t) => t.id === id) : null;
             return {
               selectedTextId: id,
+              selectedShapeId: id ? null : s.selectedShapeId,
               textFontFamily: text?.fontFamily ?? s.textFontFamily,
               textFontSize: text?.fontSize ?? s.textFontSize,
               textFontWeight: text?.fontWeight ?? s.textFontWeight,

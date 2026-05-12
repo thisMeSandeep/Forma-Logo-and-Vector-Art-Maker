@@ -1,6 +1,7 @@
 import type { Shape, TextItem } from '../types';
 import { EXPORT_PADDING, EXPORT_PNG_SCALE } from '../config/constants';
 import { roundedRingToD } from './svgPath';
+import { bakedShapeRings } from './geometry';
 
 function textWidth(text: TextItem) {
   return Math.max(text.fontSize * 2, text.content.length * text.fontSize * 0.62);
@@ -27,7 +28,7 @@ function getBoundingBox(
 ): { x: number; y: number; w: number; h: number } {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const shape of shapes) {
-    for (const ring of shape.points) {
+    for (const ring of bakedShapeRings(shape)) {
       for (const pt of ring) {
         if (pt.x < minX) minX = pt.x;
         if (pt.y < minY) minY = pt.y;
@@ -66,7 +67,9 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
   const pathMarkup = shapes
     .map((shape) => {
       const r = shape.cornerRadius ?? 0;
-      const d = shape.points.map((ring) => roundedRingToD(ring, r)).join(' ');
+      // Bake the transform into world-space points so the export is a plain
+      // path with no transform attribute — simpler for downstream consumers.
+      const d = bakedShapeRings(shape).map((ring) => roundedRingToD(ring, r)).join(' ');
       return `  <path d="${d}" fill-rule="evenodd" fill="${shape.fill}" stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" stroke-linejoin="round" />`;
     })
     .join('\n');

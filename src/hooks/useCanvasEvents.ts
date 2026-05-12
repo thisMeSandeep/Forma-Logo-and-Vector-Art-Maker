@@ -69,6 +69,10 @@ export function useCanvasEvents(
       return e.target instanceof Element && e.target.closest('[data-text-interaction="true"]');
     }
 
+    function isShapeInteraction(e: PointerEvent) {
+      return e.target instanceof Element && e.target.closest('[data-shape-interaction="true"]');
+    }
+
     function onPointerMove(e: PointerEvent) {
       // --- Pan continuation (middle-mouse held) ---
       if (isPanningRef.current) {
@@ -129,6 +133,7 @@ export function useCanvasEvents(
       if (e.button !== 0) return;
 
       if (isTextInteraction(e)) return;
+      if (isShapeInteraction(e)) return;
 
       const world   = getWorldPoint(e);
 
@@ -150,7 +155,10 @@ export function useCanvasEvents(
       }
 
       if (activeToolRef.current === 'select') {
+        // Click on bare canvas → clear both selections. Clicks that land on a
+        // shape or text never reach here because those layers stopPropagation.
         useAppStore.getState().setSelectedTextId(null);
+        useAppStore.getState().setSelectedShapeId(null);
         return;
       }
 

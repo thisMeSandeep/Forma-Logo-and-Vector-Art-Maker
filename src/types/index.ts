@@ -7,6 +7,25 @@ export type ViewBox = { x: number; y: number; w: number; h: number };
 
 export type ShapeType = 'draw' | 'cutout';
 
+// Free-form transform applied around the shape's baked-points bbox center.
+// Default (when transform is undefined) is the identity. Rotate/scale/skew live
+// here so they can be tweaked or fully reset without rebaking the geometry.
+export type ShapeTransform = {
+  rotation: number;  // degrees
+  scaleX: number;    // 1 = identity
+  scaleY: number;
+  skewX: number;     // degrees
+  skewY: number;
+};
+
+export const IDENTITY_TRANSFORM: ShapeTransform = {
+  rotation: 0,
+  scaleX: 1,
+  scaleY: 1,
+  skewX: 0,
+  skewY: 0,
+};
+
 export type Shape = {
   id: string;
   points: Point[][];  // first ring = outer boundary; subsequent rings = holes
@@ -15,6 +34,7 @@ export type Shape = {
   strokeWidth: number;
   cornerRadius: number;
   type: ShapeType;
+  transform?: ShapeTransform;
 };
 
 export type TextAnchor = 'start' | 'middle' | 'end';
@@ -60,6 +80,7 @@ export type AppState = {
   textFontWeight: FontWeight;
   textFill: string;
   textAnchor: TextAnchor;
+  selectedShapeId: string | null;
   selectedTextId: string | null;
   editingTextId: string | null;
   history: CanvasSnapshot[];
@@ -89,6 +110,19 @@ export type AppState = {
   redo: () => void;
   resetCanvas: () => void;
   cutoutShape: (cutterPoints: Point[]) => void;
+
+  // Shape selection & manipulation
+  setSelectedShapeId: (id: string | null) => void;
+  updateShape: (id: string, patch: Partial<Shape>) => void;
+  moveShape: (id: string, dx: number, dy: number) => void;
+  duplicateShape: (id: string) => void;
+  flipShape: (id: string, axis: 'horizontal' | 'vertical') => void;
+  deleteShape: (id: string) => void;
+  reorderShape: (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => void;
+  setShapeTransform: (id: string, patch: Partial<ShapeTransform>) => void;
+  rotateShape: (id: string, deltaDegrees: number) => void;
+  resetShapeTransform: (id: string) => void;
+  commitHistory: () => void;
 
   // Text actions
   addText: (text: TextItem) => void;
