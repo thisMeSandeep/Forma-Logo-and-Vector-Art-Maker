@@ -4,6 +4,15 @@ import { CUTOUT_FILL_OPACITY, ALIGN_SNAP_PX } from '../../config/constants';
 import { roundedRingToD, openRingToD } from '../../lib/svgPath';
 import { bboxOfRings, shapeTransformString, type BBox } from '../../lib/geometry';
 import { findAlignmentSnap, visualBBox } from '../../lib/alignment';
+import {
+  gradientEndpoints,
+  shapeFilterId,
+  shapeGradientId,
+  shapeNeedsFilter,
+  shapeUsesGradient,
+  strokeDashArray,
+  strokeLinecap,
+} from '../../lib/shapeStyle';
 import { screenToWorld } from '../../hooks/useViewBox';
 
 export function ShapeLayer() {
@@ -108,8 +117,8 @@ export function ShapeLayer() {
 
   return (
     <g id="shape-layer">
-      {/* Arrowhead marker shared by all open paths with arrowEnd. Uses
-          context-stroke so each arrow inherits the path's own stroke color. */}
+      {/* Shared arrowhead marker + per-shape filter and gradient defs.
+          context-stroke makes each arrow inherit its path's stroke color. */}
       <defs>
         <marker
           id="arrowhead"
@@ -123,6 +132,51 @@ export function ShapeLayer() {
         >
           <path d="M0,0 L10,5 L0,10 z" fill="context-stroke" />
         </marker>
+        {shapes.map((shape) => {
+          const defs: React.ReactNode[] = [];
+          if (shapeNeedsFilter(shape)) {
+            const shadow = shape.shadow;
+            const blur = shape.blur ?? 0;
+            defs.push(
+              <filter
+                key={`f-${shape.id}`}
+                id={shapeFilterId(shape)}
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+              >
+                {shadow && (
+                  <feDropShadow
+                    dx={shadow.x}
+                    dy={shadow.y}
+                    stdDeviation={shadow.blur / 2}
+                    floodColor={shadow.color}
+                  />
+                )}
+                {blur > 0 && <feGaussianBlur stdDeviation={blur} />}
+              </filter>,
+            );
+          }
+          if (shapeUsesGradient(shape) && shape.fillGradient) {
+            const { from, to, angle } = shape.fillGradient;
+            const { x1, y1, x2, y2 } = gradientEndpoints(angle);
+            defs.push(
+              <linearGradient
+                key={`g-${shape.id}`}
+                id={shapeGradientId(shape)}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+              >
+                <stop offset="0%" stopColor={from} />
+                <stop offset="100%" stopColor={to} />
+              </linearGradient>,
+            );
+          }
+          return defs;
+        })}
       </defs>
       {shapes.map((shape) => {
         const closed = shape.closed ?? true;
@@ -134,6 +188,10 @@ export function ShapeLayer() {
         const d = closed
           ? shape.points.map((ring) => roundedRingToD(ring, r)).join(' ')
           : openRingToD(shape.points[0]);
+        const useGradient = closed && shapeUsesGradient(shape);
+        const fillAttr = closed
+          ? (useGradient ? `url(#${shapeGradientId(shape)})` : shape.fill)
+          : 'none';
         // fillRule="evenodd" makes inner rings render as transparent holes.
         // The selection rect lives inside the same transformed group so it tracks
         // rotation/scale/skew without needing a separate visual-bbox calculation.
@@ -143,12 +201,15 @@ export function ShapeLayer() {
               data-shape-id={shape.id}
               d={d}
               fillRule="evenodd"
-              fill={closed ? shape.fill : 'none'}
+              fill={fillAttr}
               fillOpacity={closed ? fillOpacity : undefined}
               stroke={shape.stroke}
               strokeWidth={shape.strokeWidth}
+              strokeDasharray={strokeDashArray(shape)}
               strokeLinejoin="round"
-              strokeLinecap={closed ? undefined : 'round'}
+              strokeLinecap={strokeLinecap(shape)}
+              opacity={shape.opacity}
+              filter={shapeNeedsFilter(shape) ? `url(#${shapeFilterId(shape)})` : undefined}
               markerEnd={shape.arrowEnd ? 'url(#arrowhead)' : undefined}
               style={{ cursor: interactive ? 'move' : 'inherit' }}
               onPointerDown={(e) => startDrag(e, shape.id)}

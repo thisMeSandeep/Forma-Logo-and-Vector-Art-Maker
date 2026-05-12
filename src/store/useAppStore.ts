@@ -69,6 +69,8 @@ export const useAppStore = create<AppState>()(
         fillColor: FILL_COLOR_DEFAULT,
         strokeWidth: STROKE_WIDTH_DEFAULT,
         cornerRadius: CORNER_RADIUS_DEFAULT,
+        opacity: OPACITY_DEFAULT,
+        strokeStyle: STROKE_STYLE_DEFAULT,
         textFontFamily: TEXT_FONT_FAMILY_DEFAULT,
         textFontSize: TEXT_FONT_SIZE_DEFAULT,
         textFontWeight: TEXT_FONT_WEIGHT_DEFAULT,
@@ -123,6 +125,10 @@ export const useAppStore = create<AppState>()(
           set((s) => ({ strokeWidth: width, shapes: patchSelectedShape(s.shapes, s.selectedShapeId, 'strokeWidth', width) })),
         setCornerRadius: (r) =>
           set((s) => ({ cornerRadius: r, shapes: patchSelectedShape(s.shapes, s.selectedShapeId, 'cornerRadius', r) })),
+        setOpacity: (o) =>
+          set((s) => ({ opacity: o, shapes: patchSelectedShape(s.shapes, s.selectedShapeId, 'opacity', o) })),
+        setStrokeStyle: (style) =>
+          set((s) => ({ strokeStyle: style, shapes: patchSelectedShape(s.shapes, s.selectedShapeId, 'strokeStyle', style) })),
 
         setPreviewPoints: (points) => set({ previewPoints: points }),
         setDragStart: (point) => set({ dragStart: point }),
@@ -208,6 +214,8 @@ export const useAppStore = create<AppState>()(
               strokeColor:  shape?.stroke       ?? s.strokeColor,
               strokeWidth:  shape?.strokeWidth  ?? s.strokeWidth,
               cornerRadius: shape?.cornerRadius ?? s.cornerRadius,
+              opacity:      shape?.opacity      ?? s.opacity,
+              strokeStyle:  shape?.strokeStyle  ?? s.strokeStyle,
             };
           }),
 
@@ -347,6 +355,8 @@ export const useAppStore = create<AppState>()(
         strokeColor:    state.strokeColor,
         strokeWidth:    state.strokeWidth,
         cornerRadius:   state.cornerRadius,
+        opacity:        state.opacity,
+        strokeStyle:    state.strokeStyle,
         textFontFamily: state.textFontFamily,
         textFontSize:   state.textFontSize,
         textFontWeight: state.textFontWeight,

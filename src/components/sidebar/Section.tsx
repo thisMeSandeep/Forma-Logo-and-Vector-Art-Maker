@@ -37,17 +37,29 @@ export function Section({ title, icon, defaultOpen = true, children }: Props) {
 }
 
 // Single property row: label on the left, control on the right.
+// When `stretch` is set, the control area grows to fill remaining width —
+// use for segmented controls / sliders that otherwise look cramped.
 export function PropertyRow({
   label,
   children,
+  stretch,
 }: {
   label: string;
   children: ReactNode;
+  stretch?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 min-h-8">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <div className="flex items-center gap-1">{children}</div>
+    <div className="flex items-center gap-2 min-h-8">
+      <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+      <div
+        className={
+          stretch
+            ? 'flex items-center gap-1 flex-1 min-w-0'
+            : 'flex items-center gap-1 ml-auto'
+        }
+      >
+        {children}
+      </div>
     </div>
   );
 }

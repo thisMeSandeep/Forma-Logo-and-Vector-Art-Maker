@@ -65,11 +65,8 @@ Ideas for features to expand Forma Studio beyond the current draw / cutout / tex
 ## Canvas & View
 
 - **Pan tool** (Space + drag) and configurable zoom (fit, 100%, custom %).
-- **Rulers** along the top and left edges.
-- **Multiple artboards / pages**.
-- **Custom canvas size** with presets (A4, 1080×1080, 1920×1080, etc.).
 - **Background color** for the canvas (not just the page).
-- **Bleed / safe-area** guides for print export.
+<!-- - **Bleed / safe-area** guides for print export. -->
 
 ## Grid & Guides
 

@@ -2,6 +2,15 @@ import type { Shape, TextItem } from '../types';
 import { EXPORT_PADDING, EXPORT_PNG_SCALE } from '../config/constants';
 import { roundedRingToD, openRingToD } from './svgPath';
 import { bakedShapeRings } from './geometry';
+import {
+  shapeDefsMarkup,
+  shapeFilterId,
+  shapeGradientId,
+  shapeNeedsFilter,
+  shapeUsesGradient,
+  strokeDashArray,
+  strokeLinecap,
+} from './shapeStyle';
 
 function textWidth(text: TextItem) {
   return Math.max(text.fontSize * 2, text.content.length * text.fontSize * 0.62);
@@ -64,10 +73,13 @@ function getBoundingBox(
 function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
   const { x, y, w, h } = getBoundingBox(shapes, texts);
 
+  // Collect per-shape filter/gradient defs alongside the shared arrowhead marker.
   const hasArrow = shapes.some((s) => s.arrowEnd);
-  const arrowDef = hasArrow
-    ? '  <defs><marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke" /></marker></defs>'
-    : '';
+  const arrowMarker =
+    '<marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke" /></marker>';
+  const shapeDefs = shapes.flatMap((sh) => shapeDefsMarkup(sh)).map((p) => p.markup).join('');
+  const defsInner = (hasArrow ? arrowMarker : '') + shapeDefs;
+  const defsBlock = defsInner ? `  <defs>${defsInner}</defs>` : '';
 
   const pathMarkup = shapes
     .map((shape) => {
@@ -79,10 +91,22 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
       const d = closed
         ? baked.map((ring) => roundedRingToD(ring, r)).join(' ')
         : openRingToD(baked[0]);
-      const fillAttr = closed ? `fill="${shape.fill}"` : `fill="none"`;
+
+      const useGradient = closed && shapeUsesGradient(shape);
+      const fillValue = closed
+        ? (useGradient ? `url(#${shapeGradientId(shape)})` : shape.fill)
+        : 'none';
+      const fillAttr = `fill="${fillValue}"`;
+
       const markerAttr = shape.arrowEnd ? ` marker-end="url(#arrowhead)"` : '';
-      const capAttr = closed ? '' : ' stroke-linecap="round"';
-      return `  <path d="${d}" fill-rule="evenodd" ${fillAttr} stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" stroke-linejoin="round"${capAttr}${markerAttr} />`;
+      const dash = strokeDashArray(shape);
+      const dashAttr = dash ? ` stroke-dasharray="${dash}"` : '';
+      const cap = strokeLinecap(shape);
+      const capAttr = cap ? ` stroke-linecap="${cap}"` : '';
+      const opacityAttr = shape.opacity != null && shape.opacity !== 1 ? ` opacity="${shape.opacity}"` : '';
+      const filterAttr = shapeNeedsFilter(shape) ? ` filter="url(#${shapeFilterId(shape)})"` : '';
+
+      return `  <path d="${d}" fill-rule="evenodd" ${fillAttr} stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" stroke-linejoin="round"${dashAttr}${capAttr}${opacityAttr}${filterAttr}${markerAttr} />`;
     })
     .join('\n');
 
@@ -94,7 +118,7 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${w}" height="${h}">`,
-    arrowDef,
+    defsBlock,
     pathMarkup,
     textMarkup,
     `</svg>`,

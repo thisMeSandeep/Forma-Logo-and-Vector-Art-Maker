@@ -18,7 +18,14 @@ function buildPrimitiveShape(
   tool: Tool,
   start: Point,
   end: Point,
-  style: { fill: string; stroke: string; strokeWidth: number; cornerRadius: number },
+  style: {
+    fill: string;
+    stroke: string;
+    strokeWidth: number;
+    cornerRadius: number;
+    opacity: number;
+    strokeStyle: import('../types').StrokeStyle;
+  },
   options: { polygonSides: number; starPointCount: number; starInnerRatio: number },
 ): Shape | null {
   let ring: Point[];
@@ -49,6 +56,8 @@ function buildPrimitiveShape(
     stroke: style.stroke,
     strokeWidth: style.strokeWidth,
     cornerRadius: style.cornerRadius,
+    opacity: style.opacity,
+    strokeStyle: style.strokeStyle,
     type: 'draw',
     closed,
     arrowEnd,
@@ -70,6 +79,8 @@ export function useCanvasEvents(
   const strokeColorRef = useRef(useAppStore.getState().strokeColor);
   const strokeWidthRef = useRef(useAppStore.getState().strokeWidth);
   const cornerRadiusRef = useRef(useAppStore.getState().cornerRadius);
+  const opacityRef = useRef(useAppStore.getState().opacity);
+  const strokeStyleRef = useRef(useAppStore.getState().strokeStyle);
   const textFontFamilyRef = useRef(useAppStore.getState().textFontFamily);
   const textFontSizeRef = useRef(useAppStore.getState().textFontSize);
   const textFontWeightRef = useRef(useAppStore.getState().textFontWeight);
@@ -95,6 +106,8 @@ export function useCanvasEvents(
       strokeColorRef.current = s.strokeColor;
       strokeWidthRef.current = s.strokeWidth;
       cornerRadiusRef.current = s.cornerRadius;
+      opacityRef.current = s.opacity;
+      strokeStyleRef.current = s.strokeStyle;
       textFontFamilyRef.current = s.textFontFamily;
       textFontSizeRef.current = s.textFontSize;
       textFontWeightRef.current = s.textFontWeight;
@@ -256,6 +269,8 @@ export function useCanvasEvents(
             stroke:      strokeColorRef.current,
             strokeWidth: strokeWidthRef.current,
             cornerRadius: cornerRadiusRef.current,
+            opacity:     opacityRef.current,
+            strokeStyle: strokeStyleRef.current,
             type: 'draw',
           };
           addShape(shape);
@@ -295,6 +310,8 @@ export function useCanvasEvents(
             stroke: strokeColorRef.current,
             strokeWidth: strokeWidthRef.current,
             cornerRadius: cornerRadiusRef.current,
+            opacity: opacityRef.current,
+            strokeStyle: strokeStyleRef.current,
           },
           {
             polygonSides:   store.polygonSides,
