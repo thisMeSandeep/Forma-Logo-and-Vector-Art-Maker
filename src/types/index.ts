@@ -26,6 +26,22 @@ export const IDENTITY_TRANSFORM: ShapeTransform = {
   skewY: 0,
 };
 
+export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
+export type FillKind = 'solid' | 'linear';
+
+export type ShapeShadow = {
+  x: number;
+  y: number;
+  blur: number;
+  color: string;
+};
+
+export type LinearGradient = {
+  from: string;
+  to: string;
+  angle: number;  // degrees, 0 = left→right, 90 = top→bottom
+};
+
 export type Shape = {
   id: string;
   points: Point[][];  // first ring = outer boundary; subsequent rings = holes
@@ -40,6 +56,13 @@ export type Shape = {
   closed?: boolean;
   // When set, draws an arrowhead at the last point of the (first) ring.
   arrowEnd?: boolean;
+  // Styling extensions. Undefined → use legacy defaults.
+  opacity?: number;             // 0..1
+  strokeStyle?: StrokeStyle;
+  shadow?: ShapeShadow | null;  // null = explicitly disabled
+  blur?: number;                // gaussian blur radius (0 = none)
+  fillKind?: FillKind;          // 'solid' (default) or 'linear' (uses fillGradient)
+  fillGradient?: LinearGradient;
 };
 
 export type TextAnchor = 'start' | 'middle' | 'end';
@@ -95,6 +118,8 @@ export type AppState = {
   fillColor: string;
   strokeWidth: number;
   cornerRadius: number;
+  opacity: number;
+  strokeStyle: StrokeStyle;
   // Defaults for newly placed text — also used as the "global" editing state
   // when a text is selected (mirrors how shape style works).
   textFontFamily: string;
@@ -110,6 +135,8 @@ export type AppState = {
   previewPoints: Point[];
   // Drag-to-create state for primitive tools. cursorPoint provides the moving end.
   dragStart: Point | null;
+  // Smart guides shown during shape drag. Transient — cleared on pointerup.
+  activeGuides: import('../lib/alignment').Guide[];
   shiftConstrain: boolean;
   // Primitive-tool config
   polygonSides: number;
@@ -129,8 +156,12 @@ export type AppState = {
   setFillColor: (color: string) => void;
   setStrokeWidth: (width: number) => void;
   setCornerRadius: (r: number) => void;
+  setOpacity: (o: number) => void;
+  setStrokeStyle: (s: StrokeStyle) => void;
   setPreviewPoints: (points: Point[]) => void;
   setDragStart: (point: Point | null) => void;
+  setActiveGuides: (guides: import('../lib/alignment').Guide[]) => void;
+  alignSelectedToCanvas: (direction: import('../lib/alignment').AlignDirection) => void;
   setShiftConstrain: (on: boolean) => void;
   setPolygonSides: (n: number) => void;
   setStarPointCount: (n: number) => void;

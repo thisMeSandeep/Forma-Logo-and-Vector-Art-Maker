@@ -5,6 +5,8 @@ import {
   STROKE_COLOR_DEFAULT,
   STROKE_WIDTH_DEFAULT,
   CORNER_RADIUS_DEFAULT,
+  OPACITY_DEFAULT,
+  STROKE_STYLE_DEFAULT,
   GRID_SIZE_DEFAULT,
   MAX_HISTORY,
   TEXT_FONT_FAMILY_DEFAULT,
@@ -17,6 +19,7 @@ import {
   STAR_INNER_RATIO_DEFAULT,
 } from '../config/constants';
 import { translateRings } from '../lib/geometry';
+import { alignToCanvasDelta, visualBBox } from '../lib/alignment';
 import {
   applyCutout,
   duplicatedShape,
@@ -78,6 +81,7 @@ export const useAppStore = create<AppState>()(
         future: [] as CanvasSnapshot[],
         previewPoints: [] as Point[],
         dragStart: null,
+        activeGuides: [],
         shiftConstrain: false,
         polygonSides: POLYGON_SIDES_DEFAULT,
         starPointCount: STAR_POINTS_DEFAULT,
@@ -122,6 +126,23 @@ export const useAppStore = create<AppState>()(
 
         setPreviewPoints: (points) => set({ previewPoints: points }),
         setDragStart: (point) => set({ dragStart: point }),
+        setActiveGuides: (guides) => set({ activeGuides: guides }),
+
+        alignSelectedToCanvas: (direction) => {
+          const { selectedShapeId, shapes, initialViewBox } = get();
+          if (!selectedShapeId || !initialViewBox) return;
+          const shape = shapes.find((sh) => sh.id === selectedShapeId);
+          if (!shape) return;
+          const { dx, dy } = alignToCanvasDelta(visualBBox(shape), initialViewBox, direction);
+          if (dx === 0 && dy === 0) return;
+          set((s) => ({
+            shapes: s.shapes.map((sh) =>
+              sh.id === selectedShapeId ? { ...sh, points: translateRings(sh.points, dx, dy) } : sh,
+            ),
+            history: pushHistory(),
+            future: [],
+          }));
+        },
         setShiftConstrain: (on) => set({ shiftConstrain: on }),
         setPolygonSides: (n) => set({ polygonSides: n }),
         setStarPointCount: (n) => set({ starPointCount: n }),

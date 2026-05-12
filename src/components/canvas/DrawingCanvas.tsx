@@ -7,6 +7,7 @@ import { ShapeLayer } from './ShapeLayer';
 import { SelectionHandles } from './SelectionHandles';
 import { TextLayer } from './TextLayer';
 import { PreviewLayer } from './PreviewLayer';
+import { GuidesLayer } from './GuidesLayer';
 import { CROSSHAIR_ARM } from '../../config/constants';
 import { isPrimitiveTool } from '../../types';
 
@@ -36,6 +37,7 @@ export function DrawingCanvas() {
       <ShapeLayer />
       <TextLayer />
       <PreviewLayer />
+      <GuidesLayer />
       <SelectionHandles />
       {/* Crosshair: translate to world point, scale so arms stay pixel-sized at any zoom */}
       <g

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { CUTOUT_FILL_OPACITY } from '../../config/constants';
+import { CUTOUT_FILL_OPACITY, ALIGN_SNAP_PX } from '../../config/constants';
 import { roundedRingToD, openRingToD } from '../../lib/svgPath';
-import { bboxOfRings, shapeTransformString } from '../../lib/geometry';
+import { bboxOfRings, shapeTransformString, type BBox } from '../../lib/geometry';
+import { findAlignmentSnap, visualBBox } from '../../lib/alignment';
 import { screenToWorld } from '../../hooks/useViewBox';
 
 export function ShapeLayer() {
@@ -21,11 +22,16 @@ export function ShapeLayer() {
 
   // Drag state lives in a ref because pointermove fires off the window listener,
   // not React's tree (works while the cursor leaves the original <path>).
+  //
+  // We track start-relative positions (startCursor, startBox) so each frame we
+  // can recompute the target position from absolute cursor delta and re-run the
+  // snap. Using incremental deltas would let the cursor drift away from the
+  // shape every time it sticks to a snap line.
   const dragRef = useRef<{
     id: string;
     svg: SVGSVGElement;
-    lastX: number;
-    lastY: number;
+    startCursor: { x: number; y: number };
+    startBox: BBox;
     moved: boolean;
   } | null>(null);
 
@@ -34,21 +40,39 @@ export function ShapeLayer() {
       const drag = dragRef.current;
       if (!drag) return;
       const rect = drag.svg.getBoundingClientRect();
-      const vb = useAppStore.getState().viewBox;
-      const world = screenToWorld(e.clientX, e.clientY, rect, vb);
-      const dx = world.x - drag.lastX;
-      const dy = world.y - drag.lastY;
-      if (dx === 0 && dy === 0) return;
-      drag.moved = true;
-      drag.lastX = world.x;
-      drag.lastY = world.y;
-      moveShape(drag.id, dx, dy);
+      const state = useAppStore.getState();
+      const vb = state.viewBox;
+      const cursor = screenToWorld(e.clientX, e.clientY, rect, vb);
+
+      const proposedDx = cursor.x - drag.startCursor.x;
+      const proposedDy = cursor.y - drag.startCursor.y;
+
+      const draggedShape = state.shapes.find((s) => s.id === drag.id);
+      if (!draggedShape) return;
+      const others = state.shapes.filter((s) => s.id !== drag.id).map(visualBBox);
+      const zoom = state.initialViewBox ? state.initialViewBox.w / vb.w : 1;
+      const threshold = ALIGN_SNAP_PX / zoom;
+
+      const { dx, dy, guides } = findAlignmentSnap(
+        drag.startBox, others, proposedDx, proposedDy, threshold, state.initialViewBox,
+      );
+
+      // Apply only the increment relative to the shape's current position
+      const currentBox = visualBBox(draggedShape);
+      const incrementDx = drag.startBox.x + dx - currentBox.x;
+      const incrementDy = drag.startBox.y + dy - currentBox.y;
+      if (incrementDx !== 0 || incrementDy !== 0) {
+        drag.moved = true;
+        moveShape(drag.id, incrementDx, incrementDy);
+      }
+      state.setActiveGuides(guides);
     }
 
     function onPointerUp() {
       const drag = dragRef.current;
       if (drag?.moved) commitHistory();
       dragRef.current = null;
+      useAppStore.getState().setActiveGuides([]);
     }
 
     window.addEventListener('pointermove', onPointerMove);
@@ -63,15 +87,23 @@ export function ShapeLayer() {
     if (e.button !== 0) return;
     // Read tool live: a Cmd+click in another tool just synchronously switched
     // to 'select', and React state is one render behind that change.
-    if (useAppStore.getState().activeTool !== 'select') return;
+    const state = useAppStore.getState();
+    if (state.activeTool !== 'select') return;
     e.stopPropagation();
     const svg = e.currentTarget.ownerSVGElement;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    const vb = useAppStore.getState().viewBox;
-    const world = screenToWorld(e.clientX, e.clientY, rect, vb);
+    const world = screenToWorld(e.clientX, e.clientY, rect, state.viewBox);
     setSelectedShapeId(id);
-    dragRef.current = { id, svg, lastX: world.x, lastY: world.y, moved: false };
+    const shape = state.shapes.find((s) => s.id === id);
+    if (!shape) return;
+    dragRef.current = {
+      id,
+      svg,
+      startCursor: { x: world.x, y: world.y },
+      startBox: visualBBox(shape),
+      moved: false,
+    };
   }
 
   return (

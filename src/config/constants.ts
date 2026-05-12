@@ -71,6 +71,17 @@ export const STAR_INNER_RATIO_DEFAULT = 0.4;
 export const STAR_INNER_RATIO_MIN = 0.1;
 export const STAR_INNER_RATIO_MAX = 0.9;
 
+// Snap threshold for drag-time alignment (screen pixels — converted to world
+// units using the current zoom). Larger = stickier.
+export const ALIGN_SNAP_PX = 6;
+
+// Styling defaults
+export const OPACITY_DEFAULT = 1;
+export const STROKE_STYLE_DEFAULT = 'solid' as const;
+export const SHADOW_DEFAULT = { x: 0, y: 2, blur: 6, color: '#00000066' };
+export const BLUR_DEFAULT = 4;
+export const GRADIENT_DEFAULT = { from: '#2563eb', to: '#9333ea', angle: 90 };
+
 // Text defaults
 export const TEXT_FONT_FAMILY_DEFAULT = 'Geist Variable, system-ui, sans-serif';
 export const TEXT_FONT_SIZE_DEFAULT = 24;

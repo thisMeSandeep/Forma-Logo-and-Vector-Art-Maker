@@ -36,8 +36,12 @@ function buildPrimitiveShape(
   // Closed shapes need at least 3 points; open paths need 2.
   const minPoints = closed ? 3 : 2;
   if (ring.length < minPoints) return null;
-  // Reject zero-length drags so a single click on the canvas is a no-op.
-  if (!closed && ring[0].x === ring[1].x && ring[0].y === ring[1].y) return null;
+  // Reject near-zero-size drags so a single click on the canvas doesn't
+  // create an invisible shape that auto-selects and shows handles only.
+  const dx = Math.abs(end.x - start.x);
+  const dy = Math.abs(end.y - start.y);
+  if (closed && Math.max(dx, dy) < 1) return null;
+  if (!closed && dx + dy < 1) return null;
   return {
     id: crypto.randomUUID(),
     points: [ring],

@@ -2,6 +2,7 @@ import { GridSection } from './GridSection';
 import { StyleSection } from './StyleSection';
 import { PrimitiveSection } from './PrimitiveSection';
 import { TransformSection } from './TransformSection';
+import { AlignSection } from './AlignSection';
 import { TextSection } from './TextSection';
 import { ExportSection } from './ExportSection';
 
@@ -47,6 +48,9 @@ export function Sidebar({ isOpen }: Props) {
           </div>
           <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
             <TransformSection />
+          </div>
+          <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
+            <AlignSection />
           </div>
           <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
             <TextSection />

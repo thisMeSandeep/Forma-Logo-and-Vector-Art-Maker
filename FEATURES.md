@@ -21,7 +21,7 @@ Ideas for features to expand Forma Studio beyond the current draw / cutout / tex
 - **Star** tool with inner/outer radius and point count.
 - **Path / Pen** tool with bezier handles for precise curves.
 
-## Selection & Editing
+<!-- ## Selection & Editing
 
 - **Multi-select** with marquee (drag-to-select) and Shift-click.
 - **Group / Ungroup** shapes for collective transforms.
@@ -29,14 +29,14 @@ Ideas for features to expand Forma Studio beyond the current draw / cutout / tex
 - **Hide / Show** per-shape visibility toggle.
 - **Edit vertices** — Enter a node-edit mode to drag/add/delete points on an existing path.
 - **Boolean operations** — Union, Intersect, Difference, Exclude (extend the current cutout into a full boolean toolkit).
-- **Convert to path** — Turn primitives and text into editable paths.
+- **Convert to path** — Turn primitives and text into editable paths. -->
 
-## Layers & Organization
+<!-- ## Layers & Organization
 
 - **Layers panel** with reordering (drag to reorder, send-to-front/back, bring-forward/send-backward).
 - **Rename** layers / shapes.
 - **Layer opacity** and **blend modes**.
-- **Folders / groups** in the layers panel.
+- **Folders / groups** in the layers panel. -->
 
 ## Alignment & Distribution
 
@@ -48,14 +48,11 @@ Ideas for features to expand Forma Studio beyond the current draw / cutout / tex
 ## Styling
 
 - **Gradient fills** — Linear and radial gradients with multi-stop editor.
-- **Pattern fills** — Built-in patterns (dots, lines, hatch) and image fills.
-- **Multiple strokes / fills** per shape.
 - **Stroke styles** — Dashed, dotted, custom dash array, line caps, line joins.
 - **Drop shadow / inner shadow** effects.
 - **Blur** (Gaussian / motion) effect.
 - **Opacity slider** at the shape level.
-- **Color palettes / swatches** — Save and reuse colors per project.
-- **Eyedropper** to pick colors from the canvas.
+
 
 ## Text
 
