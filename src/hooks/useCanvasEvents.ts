@@ -1,9 +1,55 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { snapToSquare, snapToIsometric, distance } from '../lib/geometry';
+import {
+  rectanglePoints,
+  ellipsePoints,
+  regularPolygonPoints,
+  starPoints,
+  linePoints,
+  squareConstrain,
+} from '../lib/primitives';
 import { CLOSE_SNAP_RADIUS, ZOOM_WHEEL_FACTOR } from '../config/constants';
 import { screenToWorld } from './useViewBox';
-import type { Shape, TextItem } from '../types';
+import { isPrimitiveTool } from '../types';
+import type { Point, Shape, TextItem, Tool } from '../types';
+
+function buildPrimitiveShape(
+  tool: Tool,
+  start: Point,
+  end: Point,
+  style: { fill: string; stroke: string; strokeWidth: number; cornerRadius: number },
+  options: { polygonSides: number; starPointCount: number; starInnerRatio: number },
+): Shape | null {
+  let ring: Point[];
+  let closed = true;
+  let arrowEnd = false;
+  switch (tool) {
+    case 'rectangle': ring = rectanglePoints(start, end); break;
+    case 'ellipse':   ring = ellipsePoints(start, end); break;
+    case 'polygon':   ring = regularPolygonPoints(start, end, options.polygonSides); break;
+    case 'star':      ring = starPoints(start, end, options.starPointCount, options.starInnerRatio); break;
+    case 'line':      ring = linePoints(start, end); closed = false; break;
+    case 'arrow':     ring = linePoints(start, end); closed = false; arrowEnd = true; break;
+    default: return null;
+  }
+  // Closed shapes need at least 3 points; open paths need 2.
+  const minPoints = closed ? 3 : 2;
+  if (ring.length < minPoints) return null;
+  // Reject zero-length drags so a single click on the canvas is a no-op.
+  if (!closed && ring[0].x === ring[1].x && ring[0].y === ring[1].y) return null;
+  return {
+    id: crypto.randomUUID(),
+    points: [ring],
+    fill: style.fill,
+    stroke: style.stroke,
+    strokeWidth: style.strokeWidth,
+    cornerRadius: style.cornerRadius,
+    type: 'draw',
+    closed,
+    arrowEnd,
+  };
+}
 
 export function useCanvasEvents(
   svgRef: React.RefObject<SVGSVGElement | null>,
@@ -69,8 +115,10 @@ export function useCanvasEvents(
       return e.target instanceof Element && e.target.closest('[data-text-interaction="true"]');
     }
 
-    function isShapeInteraction(e: PointerEvent) {
-      return e.target instanceof Element && e.target.closest('[data-shape-interaction="true"]');
+    function shapeIdAt(e: PointerEvent): string | null {
+      if (!(e.target instanceof Element)) return null;
+      const el = e.target.closest('[data-shape-id]');
+      return el?.getAttribute('data-shape-id') ?? null;
     }
 
     function onPointerMove(e: PointerEvent) {
@@ -96,7 +144,8 @@ export function useCanvasEvents(
 
       // Move crosshair in world space, scaled so arms stay a fixed pixel size
       if (crosshairRef.current) {
-        if (activeToolRef.current === 'draw' || activeToolRef.current === 'cutout') {
+        const tool = activeToolRef.current;
+        if (tool === 'draw' || tool === 'cutout' || isPrimitiveTool(tool)) {
           const rect = svg!.getBoundingClientRect();
           const vb   = useAppStore.getState().viewBox;
           // scale factor: 1 local unit = 1 screen pixel at any zoom level
@@ -133,7 +182,19 @@ export function useCanvasEvents(
       if (e.button !== 0) return;
 
       if (isTextInteraction(e)) return;
-      if (isShapeInteraction(e)) return;
+
+      // Cmd/Ctrl+click on a shape selects it from any tool. Switches to select
+      // so subsequent drags/edits work without a tool change.
+      const shapeId = shapeIdAt(e);
+      if (shapeId && (e.metaKey || e.ctrlKey) && e.button === 0) {
+        e.preventDefault();
+        const s = useAppStore.getState();
+        s.setActiveTool('select');
+        s.setSelectedShapeId(shapeId);
+        return;
+      }
+      // In select mode, ShapeLayer's own React handler runs the drag-and-select.
+      if (shapeId && activeToolRef.current === 'select') return;
 
       const world   = getWorldPoint(e);
 
@@ -149,7 +210,9 @@ export function useCanvasEvents(
           fill: textFillRef.current,
           anchor: textAnchorRef.current,
         };
-        useAppStore.getState().addText(text);
+        const s = useAppStore.getState();
+        s.addText(text);
+        s.setActiveTool('select');
         setCursorPoint(null);
         return;
       }
@@ -164,6 +227,13 @@ export function useCanvasEvents(
 
       const snap    = gridModeRef.current === 'square' ? snapToSquare : snapToIsometric;
       const snapped = snap(world, gridSizeRef.current);
+
+      // Primitive tools: capture drag start. Drag end (pointerup) commits.
+      if (isPrimitiveTool(activeToolRef.current)) {
+        useAppStore.getState().setDragStart(snapped);
+        svg!.setPointerCapture(e.pointerId);
+        return;
+      }
       const { previewPoints, addShape, setPreviewPoints } = useAppStore.getState();
 
       // Close polygon when clicking near the first point (min 3 points)
@@ -172,6 +242,7 @@ export function useCanvasEvents(
         distance(snapped, previewPoints[0]) < CLOSE_SNAP_RADIUS
       ) {
         if (activeToolRef.current === 'cutout') {
+          // Cutout intentionally stays active — common to chain multiple cuts.
           useAppStore.getState().cutoutShape(previewPoints);
         } else {
           const shape: Shape = {
@@ -184,6 +255,7 @@ export function useCanvasEvents(
             type: 'draw',
           };
           addShape(shape);
+          useAppStore.getState().setActiveTool('select');
         }
         setPreviewPoints([]);
         return;
@@ -196,6 +268,43 @@ export function useCanvasEvents(
       if (e.button === 1 && isPanningRef.current) {
         isPanningRef.current = false;
         svg!.releasePointerCapture(e.pointerId);
+        return;
+      }
+
+      // Primitive-tool drag end → commit shape
+      const store = useAppStore.getState();
+      const tool = activeToolRef.current;
+      if (e.button === 0 && store.dragStart && isPrimitiveTool(tool)) {
+        const world = getWorldPoint(e);
+        const snap  = gridModeRef.current === 'square' ? snapToSquare : snapToIsometric;
+        let snapped = snap(world, gridSizeRef.current);
+        // Shift on rect/ellipse: constrain to square/circle
+        if (store.shiftConstrain && (tool === 'rectangle' || tool === 'ellipse')) {
+          snapped = snap(squareConstrain(store.dragStart, snapped), gridSizeRef.current);
+        }
+        const shape = buildPrimitiveShape(
+          tool,
+          store.dragStart,
+          snapped,
+          {
+            fill: fillColorRef.current,
+            stroke: strokeColorRef.current,
+            strokeWidth: strokeWidthRef.current,
+            cornerRadius: cornerRadiusRef.current,
+          },
+          {
+            polygonSides:   store.polygonSides,
+            starPointCount: store.starPointCount,
+            starInnerRatio: store.starInnerRatio,
+          },
+        );
+        if (shape) {
+          store.addShape(shape);
+          store.setActiveTool('select');
+          store.setSelectedShapeId(shape.id);
+        }
+        store.setDragStart(null);
+        try { svg!.releasePointerCapture(e.pointerId); } catch { /* not captured */ }
       }
     }
 
@@ -206,12 +315,21 @@ export function useCanvasEvents(
       zoomAtRef.current(world.x, world.y, factor);
     }
 
+    function onKey(e: KeyboardEvent) {
+      const on = e.shiftKey;
+      if (useAppStore.getState().shiftConstrain !== on) {
+        useAppStore.getState().setShiftConstrain(on);
+      }
+    }
+
     svg.addEventListener('pointermove',  onPointerMove);
     svg.addEventListener('pointerleave', onPointerLeave);
     svg.addEventListener('pointerdown',  onPointerDown);
     svg.addEventListener('pointerup',    onPointerUp);
     // passive:false so we can preventDefault and suppress browser scroll/zoom
     svg.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKey);
 
     return () => {
       svg.removeEventListener('pointermove',  onPointerMove);
@@ -219,6 +337,8 @@ export function useCanvasEvents(
       svg.removeEventListener('pointerdown',  onPointerDown);
       svg.removeEventListener('pointerup',    onPointerUp);
       svg.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKey);
     };
   }, [svgRef, crosshairRef, setCursorPoint]);
 }

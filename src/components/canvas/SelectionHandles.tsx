@@ -165,7 +165,10 @@ export function SelectionHandles() {
   }
 
   return (
-    <g id="selection-handles" data-shape-interaction="true">
+    // data-shape-id makes the canvas's select-mode pointerdown defer to React
+    // handlers here, instead of treating a handle click as bare-canvas (which
+    // would clear the selection and prevent the drag from starting).
+    <g id="selection-handles" data-shape-id={shape.id}>
       {/* Tether line from top-mid to rotation handle */}
       <line
         x1={topMidWorld.x}

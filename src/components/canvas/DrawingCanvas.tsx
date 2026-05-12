@@ -8,6 +8,7 @@ import { SelectionHandles } from './SelectionHandles';
 import { TextLayer } from './TextLayer';
 import { PreviewLayer } from './PreviewLayer';
 import { CROSSHAIR_ARM } from '../../config/constants';
+import { isPrimitiveTool } from '../../types';
 
 export function DrawingCanvas() {
   const svgRef       = useRef<SVGSVGElement>(null);
@@ -18,7 +19,10 @@ export function DrawingCanvas() {
 
   // Hide built-in cursor only when the SVG crosshair is active (draw/cutout)
   const activeTool = useAppStore((s) => s.activeTool);
-  const cursor = activeTool === 'draw' || activeTool === 'cutout' ? 'none' : 'default';
+  const cursor =
+    activeTool === 'draw' || activeTool === 'cutout' || isPrimitiveTool(activeTool)
+      ? 'none'
+      : 'default';
 
   return (
     <svg

@@ -42,6 +42,16 @@ export function ringToD(ring: Point[]): string {
   );
 }
 
+// Open-path version: no Z terminator. Used for Line/Arrow shapes.
+// Doesn't dedupe (`normalizeRing` closes loops which is wrong for open paths).
+export function openRingToD(ring: Point[]): string {
+  if (ring.length < 2) return '';
+  return (
+    `M${ring[0].x},${ring[0].y} ` +
+    ring.slice(1).map((p) => `L${p.x},${p.y}`).join(' ')
+  );
+}
+
 // Converts a ring to an SVG path with rounded corners.
 // At each vertex, replace the sharp corner with a quadratic bezier whose
 // control point is the vertex itself, entering and exiting `r` units along

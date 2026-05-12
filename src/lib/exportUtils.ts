@@ -1,6 +1,6 @@
 import type { Shape, TextItem } from '../types';
 import { EXPORT_PADDING, EXPORT_PNG_SCALE } from '../config/constants';
-import { roundedRingToD } from './svgPath';
+import { roundedRingToD, openRingToD } from './svgPath';
 import { bakedShapeRings } from './geometry';
 
 function textWidth(text: TextItem) {
@@ -64,13 +64,25 @@ function getBoundingBox(
 function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
   const { x, y, w, h } = getBoundingBox(shapes, texts);
 
+  const hasArrow = shapes.some((s) => s.arrowEnd);
+  const arrowDef = hasArrow
+    ? '  <defs><marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke" /></marker></defs>'
+    : '';
+
   const pathMarkup = shapes
     .map((shape) => {
+      const closed = shape.closed ?? true;
       const r = shape.cornerRadius ?? 0;
       // Bake the transform into world-space points so the export is a plain
       // path with no transform attribute — simpler for downstream consumers.
-      const d = bakedShapeRings(shape).map((ring) => roundedRingToD(ring, r)).join(' ');
-      return `  <path d="${d}" fill-rule="evenodd" fill="${shape.fill}" stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" stroke-linejoin="round" />`;
+      const baked = bakedShapeRings(shape);
+      const d = closed
+        ? baked.map((ring) => roundedRingToD(ring, r)).join(' ')
+        : openRingToD(baked[0]);
+      const fillAttr = closed ? `fill="${shape.fill}"` : `fill="none"`;
+      const markerAttr = shape.arrowEnd ? ` marker-end="url(#arrowhead)"` : '';
+      const capAttr = closed ? '' : ' stroke-linecap="round"';
+      return `  <path d="${d}" fill-rule="evenodd" ${fillAttr} stroke="${shape.stroke}" stroke-width="${shape.strokeWidth}" stroke-linejoin="round"${capAttr}${markerAttr} />`;
     })
     .join('\n');
 
@@ -82,10 +94,11 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${w}" height="${h}">`,
+    arrowDef,
     pathMarkup,
     textMarkup,
     `</svg>`,
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 }
 
 function triggerDownload(url: string, filename: string): void {

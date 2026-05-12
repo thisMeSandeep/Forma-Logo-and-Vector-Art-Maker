@@ -1,6 +1,6 @@
-import { BrushSection } from './BrushSection';
 import { GridSection } from './GridSection';
 import { StyleSection } from './StyleSection';
+import { PrimitiveSection } from './PrimitiveSection';
 import { TransformSection } from './TransformSection';
 import { TextSection } from './TextSection';
 import { ExportSection } from './ExportSection';
@@ -37,13 +37,13 @@ export function Sidebar({ isOpen }: Props) {
         {/* Sections — divided by hairline borders, no gap so headers feel docked */}
         <div className="flex-1 overflow-y-auto divide-y" style={{ borderColor: 'var(--panel-border)' }}>
           <div style={{ borderColor: 'var(--panel-border)' }}>
-            <BrushSection />
-          </div>
-          <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
             <GridSection />
           </div>
           <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
             <StyleSection />
+          </div>
+          <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
+            <PrimitiveSection />
           </div>
           <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
             <TransformSection />

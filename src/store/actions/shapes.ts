@@ -69,6 +69,8 @@ export function withRotationDelta(shape: Shape, deltaDegrees: number): Shape {
 export function applyCutout(shapes: Shape[], cutterPoints: Point[]): Shape[] | null {
   let targetIndex = -1;
   for (let i = shapes.length - 1; i >= 0; i--) {
+    // Open paths (lines/arrows) have no interior to subtract from — skip them.
+    if (shapes[i].closed === false) continue;
     if (shapesOverlap(shapes[i], cutterPoints)) {
       targetIndex = i;
       break;

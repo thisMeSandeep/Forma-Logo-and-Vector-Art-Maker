@@ -12,6 +12,9 @@ import {
   TEXT_FONT_WEIGHT_DEFAULT,
   TEXT_FILL_DEFAULT,
   TEXT_ANCHOR_DEFAULT,
+  POLYGON_SIDES_DEFAULT,
+  STAR_POINTS_DEFAULT,
+  STAR_INNER_RATIO_DEFAULT,
 } from '../config/constants';
 import { translateRings } from '../lib/geometry';
 import {
@@ -55,7 +58,7 @@ export const useAppStore = create<AppState>()(
       return {
         shapes: [],
         texts: [],
-        activeTool: 'draw' as Tool,
+        activeTool: 'select' as Tool,
         gridMode: 'square' as GridMode,
         gridSize: GRID_SIZE_DEFAULT,
         showGrid: true,
@@ -74,6 +77,11 @@ export const useAppStore = create<AppState>()(
         history: [] as CanvasSnapshot[],
         future: [] as CanvasSnapshot[],
         previewPoints: [] as Point[],
+        dragStart: null,
+        shiftConstrain: false,
+        polygonSides: POLYGON_SIDES_DEFAULT,
+        starPointCount: STAR_POINTS_DEFAULT,
+        starInnerRatio: STAR_INNER_RATIO_DEFAULT,
         cursorPoint: null,
         viewBox: DEFAULT_VIEWBOX,
         initialViewBox: null,
@@ -113,6 +121,11 @@ export const useAppStore = create<AppState>()(
           set((s) => ({ cornerRadius: r, shapes: patchSelectedShape(s.shapes, s.selectedShapeId, 'cornerRadius', r) })),
 
         setPreviewPoints: (points) => set({ previewPoints: points }),
+        setDragStart: (point) => set({ dragStart: point }),
+        setShiftConstrain: (on) => set({ shiftConstrain: on }),
+        setPolygonSides: (n) => set({ polygonSides: n }),
+        setStarPointCount: (n) => set({ starPointCount: n }),
+        setStarInnerRatio: (r) => set({ starInnerRatio: r }),
         setCursorPoint: (point) => set({ cursorPoint: point }),
 
         undo: () => {
@@ -321,7 +334,9 @@ export const useAppStore = create<AppState>()(
         gridSize:       state.gridSize,
         gridMode:       state.gridMode,
         showGrid:       state.showGrid,
-        activeTool:     state.activeTool,
+        polygonSides:   state.polygonSides,
+        starPointCount: state.starPointCount,
+        starInnerRatio: state.starInnerRatio,
       }),
     },
   ),

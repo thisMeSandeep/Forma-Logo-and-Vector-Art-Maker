@@ -60,6 +60,17 @@ export const EXPORT_PNG_SCALE = 3;
 // lets the user see grid intersections inside shapes for snapping
 export const CUTOUT_FILL_OPACITY = 0.55;
 
+// Primitive-tool defaults
+export const POLYGON_SIDES_DEFAULT = 6;
+export const POLYGON_SIDES_MIN = 3;
+export const POLYGON_SIDES_MAX = 24;
+export const STAR_POINTS_DEFAULT = 5;
+export const STAR_POINTS_MIN = 3;
+export const STAR_POINTS_MAX = 20;
+export const STAR_INNER_RATIO_DEFAULT = 0.4;
+export const STAR_INNER_RATIO_MIN = 0.1;
+export const STAR_INNER_RATIO_MAX = 0.9;
+
 // Text defaults
 export const TEXT_FONT_FAMILY_DEFAULT = 'Geist Variable, system-ui, sans-serif';
 export const TEXT_FONT_SIZE_DEFAULT = 24;

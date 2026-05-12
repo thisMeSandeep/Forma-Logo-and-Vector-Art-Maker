@@ -35,6 +35,11 @@ export type Shape = {
   cornerRadius: number;
   type: ShapeType;
   transform?: ShapeTransform;
+  // Open vs closed path. Undefined = closed (default for existing data).
+  // Open shapes render with no fill and no Z terminator, used by Line/Arrow.
+  closed?: boolean;
+  // When set, draws an arrowhead at the last point of the (first) ring.
+  arrowEnd?: boolean;
 };
 
 export type TextAnchor = 'start' | 'middle' | 'end';
@@ -52,7 +57,24 @@ export type TextItem = {
   anchor: TextAnchor;
 };
 
-export type Tool = 'draw' | 'cutout' | 'text' | 'select';
+export type Tool =
+  | 'draw'
+  | 'cutout'
+  | 'text'
+  | 'select'
+  | 'rectangle'
+  | 'ellipse'
+  | 'polygon'
+  | 'star'
+  | 'line'
+  | 'arrow';
+
+export const PRIMITIVE_TOOLS = ['rectangle', 'ellipse', 'polygon', 'star', 'line', 'arrow'] as const;
+export type PrimitiveTool = typeof PRIMITIVE_TOOLS[number];
+
+export function isPrimitiveTool(tool: Tool): tool is PrimitiveTool {
+  return (PRIMITIVE_TOOLS as readonly string[]).includes(tool);
+}
 
 export type GridMode = 'square' | 'isometric';
 
@@ -86,6 +108,13 @@ export type AppState = {
   history: CanvasSnapshot[];
   future: CanvasSnapshot[];
   previewPoints: Point[];
+  // Drag-to-create state for primitive tools. cursorPoint provides the moving end.
+  dragStart: Point | null;
+  shiftConstrain: boolean;
+  // Primitive-tool config
+  polygonSides: number;
+  starPointCount: number;
+  starInnerRatio: number;
   cursorPoint: Point | null;
   viewBox: ViewBox;
   initialViewBox: ViewBox | null;
@@ -101,6 +130,11 @@ export type AppState = {
   setStrokeWidth: (width: number) => void;
   setCornerRadius: (r: number) => void;
   setPreviewPoints: (points: Point[]) => void;
+  setDragStart: (point: Point | null) => void;
+  setShiftConstrain: (on: boolean) => void;
+  setPolygonSides: (n: number) => void;
+  setStarPointCount: (n: number) => void;
+  setStarInnerRatio: (r: number) => void;
   setCursorPoint: (point: Point | null) => void;
   setViewBox: (vb: ViewBox) => void;
   setInitialViewBox: (vb: ViewBox) => void;

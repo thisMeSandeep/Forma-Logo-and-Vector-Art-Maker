@@ -1,4 +1,15 @@
-import { Pencil, Scissors, Type, MousePointer2 } from 'lucide-react';
+import {
+  Pencil,
+  Scissors,
+  Type,
+  MousePointer2,
+  Square,
+  Circle,
+  Hexagon,
+  Star,
+  Slash,
+  MoveRight,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -7,10 +18,16 @@ import type { Tool } from '../../types';
 type ToolEntry = { value: Tool; Icon: LucideIcon; label: string };
 
 const TOOLS: ToolEntry[] = [
-  { value: 'select', Icon: MousePointer2, label: 'Select' },
-  { value: 'draw',   Icon: Pencil,        label: 'Draw' },
-  { value: 'cutout', Icon: Scissors,      label: 'Cutout' },
-  { value: 'text',   Icon: Type,          label: 'Text' },
+  { value: 'select',    Icon: MousePointer2, label: 'Select' },
+  { value: 'draw',      Icon: Pencil,        label: 'Draw' },
+  { value: 'rectangle', Icon: Square,        label: 'Rectangle' },
+  { value: 'ellipse',   Icon: Circle,        label: 'Ellipse' },
+  { value: 'line',      Icon: Slash,         label: 'Line' },
+  { value: 'arrow',     Icon: MoveRight,     label: 'Arrow' },
+  { value: 'polygon',   Icon: Hexagon,       label: 'Polygon' },
+  { value: 'star',      Icon: Star,          label: 'Star' },
+  { value: 'cutout',    Icon: Scissors,      label: 'Cutout' },
+  { value: 'text',      Icon: Type,          label: 'Text' },
 ];
 
 export function ToolFloater() {

@@ -31,9 +31,11 @@ export function useKeyboardShortcuts() {
         e.preventDefault();
         const store = useAppStore.getState();
         store.setPreviewPoints([]);
+        store.setDragStart(null);
         store.setEditingTextId(null);
         store.setSelectedTextId(null);
         store.setSelectedShapeId(null);
+        store.setActiveTool('select');
         return;
       }
 
