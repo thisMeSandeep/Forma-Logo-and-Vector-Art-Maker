@@ -16,4 +16,25 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
   ],
+  build: {
+    
+    // Generate source maps for error tracking
+    sourcemap: false, // Set to true for production error monitoring
+
+    // CSS optimization
+    cssCodeSplit: true,
+    // Asset inline threshold (4KB)
+    assetsInlineLimit: 4096,
+    // Report compressed size
+    reportCompressedSize: true,
+    // Chunk size warnings
+    chunkSizeWarningLimit: 500,
+  },
+  server: {
+    headers: {
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-XSS-Protection": "1; mode=block",
+    },
+  },
 });

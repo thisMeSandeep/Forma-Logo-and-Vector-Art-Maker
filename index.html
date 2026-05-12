@@ -1,36 +1,113 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Essential Meta Tags -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Forma is a grid-based vector logo maker for drawing geometric marks, adding text labels, editing styles, and exporting crisp SVG or PNG artwork."
+      content="Forma - Professional grid-based vector logo maker. Draw geometric marks, add styled text labels, edit styles, and export crisp SVG or PNG artwork. Perfect for designers and branding professionals."
     />
+    <meta
+      name="keywords"
+      content="logo maker, vector design, geometric logo, SVG editor, PNG export, grid design tool, professional logo creation"
+    />
+    <meta name="author" content="Forma - Logo Maker Team" />
     <meta name="theme-color" content="#f5f5f5" />
-    <meta name="robots" content="index, follow" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
 
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+
+    <!-- SEO and Robots -->
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta
+      name="googlebot"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta
+      name="bingbot"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <link rel="canonical" href="https://forma.app" />
+
+    <!-- Open Graph Tags -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Forma - Grid-Based Logo Maker" />
+    <meta
+      property="og:title"
+      content="Forma - Professional Logo and Vector Art Maker"
+    />
     <meta
       property="og:description"
-      content="Draw geometric logos, add styled text, and export clean SVG or high-resolution PNG artwork."
+      content="Create professional geometric logos and vector artwork with Forma. Grid-based design tool with SVG and PNG export. Perfect for designers, startups, and brands."
     />
     <meta property="og:image" content="/logo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="1200" />
+    <meta property="og:url" content="https://forma.app" />
+    <meta property="og:site_name" content="Forma" />
+    <meta property="og:locale" content="en_US" />
 
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Forma - Grid-Based Logo Maker" />
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Forma - Professional Logo and Vector Art Maker"
+    />
     <meta
       name="twitter:description"
-      content="Draw geometric logos, add styled text, and export clean SVG or high-resolution PNG artwork."
+      content="Create professional geometric logos and vector artwork with Forma. Grid-based design tool with SVG and PNG export."
     />
     <meta name="twitter:image" content="/logo.png" />
+    <meta name="twitter:creator" content="@forma_app" />
+    <meta name="twitter:site" content="@forma_app" />
 
-    <title>Forma - Logo and Vector Art Maker</title>
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Forma",
+        "alternateName": "Forma - Logo Maker",
+        "description": "Professional grid-based vector logo maker for designing geometric marks, adding text labels, editing styles, and exporting SVG or PNG artwork.",
+        "url": "https://forma.app",
+        "image": "/logo.png",
+        "applicationCategory": "Design",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "creator": {
+          "@type": "Organization",
+          "name": "Forma",
+          "logo": "/logo.png"
+        },
+        "browserRequirements": "Requires modern browser with Canvas and SVG support",
+        "operatingSystem": "Web",
+        "inLanguage": "en"
+      }
+    </script>
+
+    <title>Forma - Professional Logo and Vector Art Maker</title>
+    <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript
+      >This application requires JavaScript to be enabled. Please enable
+      JavaScript in your browser settings to use Forma.</noscript
+    >
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

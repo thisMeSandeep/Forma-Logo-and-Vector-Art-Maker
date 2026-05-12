@@ -6,8 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "NODE_ENV=production npm run build",
+    "preview": "vite preview",
+    "preview:prod": "vite preview --host",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc -b --noEmit",
+    "analyze": "vite build --analyze"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

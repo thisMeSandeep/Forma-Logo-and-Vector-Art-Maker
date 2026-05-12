@@ -49,8 +49,99 @@ The app will be available at `http://localhost:5173`
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
+- `npm run build:prod` - Production-optimized build
 - `npm run lint` - Run ESLint
+- `npm run lint:fix` - Auto-fix linting issues
 - `npm run preview` - Preview production build
+- `npm run preview:prod` - Preview production build with public access
+- `npm run type-check` - Type checking without build
+- `npm run analyze` - Analyze bundle size
+
+## Deployment
+
+Forma is optimized for professional deployment with comprehensive SEO and security configurations.
+
+### Quick Start
+
+1. **Build for production:**
+
+   ```bash
+   npm run build:prod
+   ```
+
+2. **Preview production build locally:**
+
+   ```bash
+   npm run preview:prod
+   ```
+
+3. **Deploy to your platform:**
+   - **Netlify**: Push to Git - automatic deployment via `netlify.toml`
+   - **Vercel**: Push to Git - automatic deployment via `vercel.json`
+   - **Other platforms**: Upload `dist/` folder generated from build
+
+### Deployment Platforms
+
+#### Netlify
+
+```bash
+# Push to Netlify-connected repository
+git push origin main
+```
+
+- Automatic builds and deploys
+- Free SSL/TLS certificates
+- CDN included
+- See `netlify.toml` for configuration
+
+#### Vercel
+
+```bash
+# Push to Vercel-connected repository
+git push origin main
+```
+
+- Automatic builds and deploys
+- Free SSL/TLS certificates
+- Edge network included
+- See `vercel.json` for configuration
+
+#### Self-Hosted
+
+```bash
+npm run build:prod
+# Upload dist/ folder to your server
+# Configure web server for SPA routing
+```
+
+### SEO & Performance
+
+The application includes:
+
+- ✅ Comprehensive meta tags (keywords, description, OpenGraph)
+- ✅ JSON-LD structured data for rich snippets
+- ✅ XML sitemap at `/sitemap.xml`
+- ✅ robots.txt for search engine crawling
+- ✅ PWA manifest for installation
+- ✅ Security headers (CSP, X-Frame-Options, etc.)
+- ✅ Optimized caching strategies
+- ✅ Code splitting and lazy loading
+- ✅ Minified production builds
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for comprehensive deployment guide.
+See [SECURITY.md](./SECURITY.md) for security headers and best practices.
+
+### Environment Variables
+
+Create `.env.production` (not committed to Git):
+
+```
+VITE_APP_ENV=production
+VITE_APP_URL=https://forma.app
+VITE_ENABLE_ANALYTICS=true
+```
+
+See `.env.example` for all available variables.
 
 ## Tech Stack
 
@@ -87,10 +178,20 @@ This project uses:
 - **Tailwind CSS** for responsive styling
 - **Vite** for fast development and builds
 
+### Performance Targets
+
+- Lighthouse Performance: > 90
+- Lighthouse SEO: 100
+- Lighthouse Accessibility: > 90
+- Lighthouse Best Practices: > 90
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
