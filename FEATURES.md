@@ -71,34 +71,12 @@ Ideas for features to expand Forma Studio beyond the current draw / cutout / tex
 
 ## Import / Export
 
-- **Import SVG** to continue editing existing files.
-- **Import image** (PNG/JPG) as a reference layer or fill.
 - **Export selected** vs. whole canvas.
-- **Export to PDF / JPEG / WebP**.
-- **Copy as SVG / PNG** to clipboard.
 - **Export presets** — 1x / 2x / 3x, custom DPI.
-- **Optimized SVG** output (minified, decimal precision setting).
 
-## Collaboration & Persistence
 
-- **Save / load projects** locally (JSON file or IndexedDB).
-- **Auto-save** with restore on reload.
-- **Project templates** — Start from a blank, social-post, icon, or logo template.
-- **Share link** — Encode design state in a URL.
-- **Cloud sync** (optional, with a backend).
-
-## Productivity
-
-- **Command palette** (Cmd/Ctrl+K) for quick actions.
-- **Customizable keyboard shortcuts**.
-- **Right-click context menu** with common actions.
-- **Action history panel** — Visual list of undo steps with the ability to jump to any state.
-- **Search** within layers by name.
 
 ## Accessibility & Polish
 
 - **Touch / iPad support** with pressure-sensitive drawing.
-- **Color-blind safe palette previews**.
-- **High-contrast UI mode**.
-- **Onboarding tour** for first-time users.
-- **Help / shortcut overlay** (? key).
+

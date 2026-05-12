@@ -141,7 +141,7 @@ export function exportSVG(shapes: Shape[], texts: TextItem[]): void {
   URL.revokeObjectURL(url);
 }
 
-export function exportPNG(shapes: Shape[], texts: TextItem[]): void {
+export function exportPNG(shapes: Shape[], texts: TextItem[], scale: number = EXPORT_PNG_SCALE): void {
   if (shapes.length === 0 && texts.length === 0) return;
   const svgString = buildShapesSVG(shapes, texts);
   const { w, h } = getBoundingBox(shapes, texts);
@@ -153,13 +153,13 @@ export function exportPNG(shapes: Shape[], texts: TextItem[]): void {
   img.onload = () => {
     const canvas = document.createElement('canvas');
     // Scale up so the PNG is crisp at display sizes
-    canvas.width = w * EXPORT_PNG_SCALE;
-    canvas.height = h * EXPORT_PNG_SCALE;
+    canvas.width = w * scale;
+    canvas.height = h * scale;
     const ctx = canvas.getContext('2d')!;
-    ctx.scale(EXPORT_PNG_SCALE, EXPORT_PNG_SCALE);
+    ctx.scale(scale, scale);
     ctx.drawImage(img, 0, 0, w, h);
     URL.revokeObjectURL(url);
-    triggerDownload(canvas.toDataURL('image/png'), 'forma-export.png');
+    triggerDownload(canvas.toDataURL('image/png'), `forma-export@${scale}x.png`);
   };
   img.src = url;
 }
