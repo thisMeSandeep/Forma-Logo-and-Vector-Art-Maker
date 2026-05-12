@@ -37,7 +37,13 @@ export function ToolFloater() {
   return (
     <TooltipProvider delayDuration={0}>
       <div
-        className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 rounded-lg p-1 border shadow-md"
+        className={[
+          // Desktop: vertical strip on the left, centered
+          'md:absolute md:left-3 md:top-1/2 md:-translate-y-1/2 md:flex-col md:bottom-auto md:right-auto md:translate-x-0 md:translate-y-[-50%]',
+          // Mobile: horizontal strip at the top center (HistoryBar owns the bottom)
+          'absolute top-2 left-1/2 -translate-x-1/2 flex-row',
+          'flex gap-1 rounded-lg p-1 border shadow-md max-w-[calc(100vw-1.5rem)] overflow-x-auto',
+        ].join(' ')}
         style={{
           background: 'var(--sidebar-bg)',
           borderColor: 'var(--panel-border)',
@@ -49,7 +55,8 @@ export function ToolFloater() {
               <button
                 onClick={() => setActiveTool(value)}
                 className={[
-                  'w-8 h-8 flex items-center justify-center rounded-md transition-colors',
+                  // Bigger tap target on touch (40px); compact 32px on desktop
+                  'w-10 h-10 md:w-8 md:h-8 shrink-0 flex items-center justify-center rounded-md transition-colors',
                   activeTool === value
                     ? 'bg-foreground/10 text-foreground'
                     : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5',

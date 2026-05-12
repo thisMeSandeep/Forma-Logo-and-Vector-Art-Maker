@@ -34,7 +34,7 @@ export function DrawingCanvas() {
       className="w-full h-full"
       // Only set viewBox once we know the real SVG size (avoids a 1-frame scale flash)
       viewBox={isInitialized ? viewBoxStr : undefined}
-      style={{ background: canvasBackground, cursor }}
+      style={{ background: canvasBackground, cursor, touchAction: 'none' }}
     >
       <GridLayer />
       <ShapeLayer />

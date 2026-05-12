@@ -48,23 +48,26 @@ export function CanvasOverlay() {
             <span className="opacity-60">{itemCount === 1 ? 'item' : 'items'}</span>
           </StatusChip>
 
-          <Divider />
+          {/* Tool + grid chips drop on phones to save horizontal space */}
+          <Divider className="hidden sm:block" />
 
-          <StatusChip icon={<MousePointer2 size={11} />}>
-            <span className="capitalize">{activeTool}</span>
-          </StatusChip>
+          <div className="hidden sm:flex items-stretch h-full">
+            <StatusChip icon={<MousePointer2 size={11} />}>
+              <span className="capitalize">{activeTool}</span>
+            </StatusChip>
 
-          <Divider />
+            <Divider />
 
-          <StatusChip icon={<GridIcon size={11} />}>
-            <span>{gridMode === 'isometric' ? 'Isometric' : 'Square'}</span>
-            <span className="opacity-60 tabular-nums">{gridSize}px</span>
-          </StatusChip>
+            <StatusChip icon={<GridIcon size={11} />}>
+              <span>{gridMode === 'isometric' ? 'Isometric' : 'Square'}</span>
+              <span className="opacity-60 tabular-nums">{gridSize}px</span>
+            </StatusChip>
+          </div>
         </div>
 
-        {/* Center: live cursor coords (only while in canvas) */}
+        {/* Center: live cursor coords (only while in canvas; hidden on touch) */}
         {cursorPoint && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 font-mono text-[11px] tabular-nums opacity-70 pointer-events-none">
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-2 font-mono text-[11px] tabular-nums opacity-70 pointer-events-none">
             <span>X <span className="text-foreground/80">{Math.round(cursorPoint.x)}</span></span>
             <span>Y <span className="text-foreground/80">{Math.round(cursorPoint.y)}</span></span>
           </div>
@@ -108,10 +111,10 @@ function StatusChip({ icon, children }: { icon: React.ReactNode; children: React
   );
 }
 
-function Divider() {
+function Divider({ className }: { className?: string } = {}) {
   return (
     <div
-      className="w-px my-1.5 self-stretch"
+      className={['w-px my-1.5 self-stretch', className].filter(Boolean).join(' ')}
       style={{ background: 'var(--panel-border)' }}
     />
   );

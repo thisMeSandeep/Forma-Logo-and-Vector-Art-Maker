@@ -98,6 +98,14 @@ export function useCanvasEvents(
   const isPanningRef    = useRef(false);
   const lastPanPosRef   = useRef({ x: 0, y: 0 });
 
+  // Multi-touch pinch state
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchRef = useRef<{
+    centroid: { x: number; y: number };
+    distance: number;
+    worldAtCentroid: { x: number; y: number };
+  } | null>(null);
+
   useEffect(() =>
     useAppStore.subscribe((s) => {
       gridSizeRef.current    = s.gridSize;
@@ -139,6 +147,32 @@ export function useCanvasEvents(
     }
 
     function onPointerMove(e: PointerEvent) {
+      // --- Multi-touch pinch (two fingers) ---
+      if (e.pointerType !== 'mouse' && activePointersRef.current.has(e.pointerId)) {
+        activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+      if (pinchRef.current && activePointersRef.current.size >= 2) {
+        const pts = Array.from(activePointersRef.current.values()).slice(0, 2);
+        const centroid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+        const distance = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        // Two-finger pan: translate by centroid delta
+        const dCx = centroid.x - pinchRef.current.centroid.x;
+        const dCy = centroid.y - pinchRef.current.centroid.y;
+        if (dCx !== 0 || dCy !== 0) panByRef.current(dCx, dCy);
+        // Pinch zoom: scale by distance ratio, centered on the original world point
+        const ratio = distance / pinchRef.current.distance;
+        if (Math.abs(ratio - 1) > 0.005) {
+          zoomAtRef.current(
+            pinchRef.current.worldAtCentroid.x,
+            pinchRef.current.worldAtCentroid.y,
+            ratio,
+          );
+          pinchRef.current.distance = distance;
+        }
+        pinchRef.current.centroid = centroid;
+        return;
+      }
+
       // --- Pan continuation (middle-mouse held) ---
       if (isPanningRef.current) {
         const dx = e.clientX - lastPanPosRef.current.x;
@@ -186,6 +220,27 @@ export function useCanvasEvents(
     }
 
     function onPointerDown(e: PointerEvent) {
+      // Track touch/pen pointers for multi-touch pinch detection. Mouse is
+      // single-pointer and never triggers pinch.
+      if (e.pointerType !== 'mouse') {
+        activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (activePointersRef.current.size >= 2) {
+          // Entering pinch mode — cancel anything in progress so the gesture
+          // doesn't leave a half-drawn shape behind.
+          const store = useAppStore.getState();
+          store.setPreviewPoints([]);
+          store.setDragStart(null);
+          isPanningRef.current = false;
+          const pts = Array.from(activePointersRef.current.values()).slice(0, 2);
+          const centroid = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+          const distance = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+          const rect = svg!.getBoundingClientRect();
+          const worldAtCentroid = screenToWorld(centroid.x, centroid.y, rect, store.viewBox);
+          pinchRef.current = { centroid, distance, worldAtCentroid };
+          return;
+        }
+      }
+
       // Middle mouse OR Space+left → start pan
       const isSpacePan = e.button === 0 && useAppStore.getState().spaceDown;
       if (e.button === 1 || isSpacePan) {
@@ -285,6 +340,15 @@ export function useCanvasEvents(
     }
 
     function onPointerUp(e: PointerEvent) {
+      // Remove from active touch set; exit pinch when count drops below 2
+      if (activePointersRef.current.has(e.pointerId)) {
+        activePointersRef.current.delete(e.pointerId);
+        if (activePointersRef.current.size < 2) pinchRef.current = null;
+        // Inside a pinch we already short-circuited drawing logic, so skip
+        // primitive commit / drag-end branches below for this pointer.
+        if (e.pointerType !== 'mouse' && activePointersRef.current.size >= 1) return;
+      }
+
       // End pan regardless of which button started it (middle or space+left)
       if (isPanningRef.current && (e.button === 1 || e.button === 0)) {
         isPanningRef.current = false;
@@ -361,10 +425,16 @@ export function useCanvasEvents(
       }
     }
 
-    svg.addEventListener('pointermove',  onPointerMove);
-    svg.addEventListener('pointerleave', onPointerLeave);
-    svg.addEventListener('pointerdown',  onPointerDown);
-    svg.addEventListener('pointerup',    onPointerUp);
+    function onPointerCancel(e: PointerEvent) {
+      activePointersRef.current.delete(e.pointerId);
+      if (activePointersRef.current.size < 2) pinchRef.current = null;
+    }
+
+    svg.addEventListener('pointermove',   onPointerMove);
+    svg.addEventListener('pointerleave',  onPointerLeave);
+    svg.addEventListener('pointerdown',   onPointerDown);
+    svg.addEventListener('pointerup',     onPointerUp);
+    svg.addEventListener('pointercancel', onPointerCancel);
     // passive:false so we can preventDefault and suppress browser scroll/zoom
     svg.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
@@ -373,10 +443,11 @@ export function useCanvasEvents(
     window.addEventListener('keyup', onSpaceKey);
 
     return () => {
-      svg.removeEventListener('pointermove',  onPointerMove);
-      svg.removeEventListener('pointerleave', onPointerLeave);
-      svg.removeEventListener('pointerdown',  onPointerDown);
-      svg.removeEventListener('pointerup',    onPointerUp);
+      svg.removeEventListener('pointermove',   onPointerMove);
+      svg.removeEventListener('pointerleave',  onPointerLeave);
+      svg.removeEventListener('pointerdown',   onPointerDown);
+      svg.removeEventListener('pointerup',     onPointerUp);
+      svg.removeEventListener('pointercancel', onPointerCancel);
       svg.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKey);
