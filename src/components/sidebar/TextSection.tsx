@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Slider } from '../ui/slider';
 import { Section, PropertyRow } from './Section';
 import { NumberField } from './NumberField';
+import { FontPicker } from './FontPicker';
 import {
   GRADIENT_DEFAULT,
   RADIAL_GRADIENT_DEFAULT,
@@ -29,7 +30,6 @@ import {
   TEXT_EFFECT_GLOW_DEFAULT,
   TEXT_EFFECT_LONG_SHADOW_DEFAULT,
   TEXT_EFFECT_SHADOW_DEFAULT,
-  TEXT_FONT_OPTIONS,
   TEXT_FONT_SIZE_MAX,
   TEXT_FONT_SIZE_MIN,
   TEXT_FONT_WEIGHT_OPTIONS,
@@ -245,19 +245,18 @@ function FillSection({
   return (
     <>
       <PropertyRow label="Fill">
-        <div className="w-44">
-          <Segmented<TextFillKind>
-            value={kind}
-            options={[
-              { value: 'none',   label: 'None' },
-              { value: 'solid',  label: 'Solid' },
-              { value: 'linear', label: 'Linear' },
-              { value: 'radial', label: 'Radial' },
-              { value: 'image',  label: 'Image' },
-            ]}
-            onChange={changeKind}
-          />
-        </div>
+        <select
+          value={kind}
+          onChange={(e) => changeKind(e.target.value as TextFillKind)}
+          className="h-7 w-32 rounded border bg-foreground/[0.03] px-2 text-xs outline-none"
+          style={{ borderColor: 'var(--panel-border)' }}
+        >
+          <option value="none">None</option>
+          <option value="solid">Solid</option>
+          <option value="linear">Linear</option>
+          <option value="radial">Radial</option>
+          <option value="image">Image</option>
+        </select>
       </PropertyRow>
 
       {kind === 'solid' && (
@@ -623,18 +622,7 @@ export function TextSection() {
   return (
     <Section title="Text" icon={<Type size={11} />}>
       <PropertyRow label="Font">
-        <select
-          value={fontFamily}
-          onChange={(e) => setFontFamily(e.target.value)}
-          className="h-7 w-32 rounded border bg-foreground/[0.03] px-2 text-xs outline-none"
-          style={{ borderColor: 'var(--panel-border)' }}
-        >
-          {TEXT_FONT_OPTIONS.map((font) => (
-            <option key={font.value} value={font.value}>
-              {font.label}
-            </option>
-          ))}
-        </select>
+        <FontPicker value={fontFamily} onChange={setFontFamily} />
       </PropertyRow>
 
       <PropertyRow label="Weight">

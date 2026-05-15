@@ -27,7 +27,7 @@ export const IDENTITY_TRANSFORM: ShapeTransform = {
 };
 
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
-export type FillKind = 'solid' | 'linear';
+export type FillKind = 'none' | 'solid' | 'linear';
 
 export type ShapeShadow = {
   x: number;
@@ -275,4 +275,8 @@ export type AppState = {
   setTextStrokeStyle: (s: StrokeStyle) => void;
   setTextTransform: (id: string, patch: Partial<ShapeTransform>) => void;
   resetTextTransform: (id: string) => void;
+  duplicateText: (id: string) => void;
+  flipText: (id: string, axis: 'horizontal' | 'vertical') => void;
+  rotateText: (id: string, deltaDegrees: number) => void;
+  reorderText: (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => void;
 };

@@ -159,11 +159,13 @@ export function StyleSection() {
             <Segmented
               value={fillKind}
               options={[
+                { value: 'none',   label: 'None' },
                 { value: 'solid',  label: 'Solid' },
                 { value: 'linear', label: 'Gradient' },
               ]}
               onChange={(v) => {
                 if (v === 'linear') patch({ fillKind: 'linear', fillGradient: gradient });
+                else if (v === 'none') patch({ fillKind: 'none' });
                 else patch({ fillKind: 'solid' });
               }}
             />
@@ -171,7 +173,7 @@ export function StyleSection() {
         </PropertyRow>
       )}
 
-      {fillKind === 'solid' && (
+      {(!selected || fillKind === 'solid') && (
         <ColorRow label={selected ? 'Color' : 'Fill'} value={fillColor} onChange={setFillColor} />
       )}
 

@@ -291,6 +291,7 @@ export function TextLayer() {
                 className="select-none"
                 style={{ cursor: 'move' }}
                 onPointerDown={(e) => startDrag(e, text)}
+                onContextMenu={() => setSelectedTextId(text.id)}
                 onDoubleClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();

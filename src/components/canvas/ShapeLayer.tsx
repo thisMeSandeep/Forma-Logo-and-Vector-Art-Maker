@@ -190,7 +190,9 @@ export function ShapeLayer() {
           : openRingToD(shape.points[0]);
         const useGradient = closed && shapeUsesGradient(shape);
         const fillAttr = closed
-          ? (useGradient ? `url(#${shapeGradientId(shape)})` : shape.fill)
+          ? (shape.fillKind === 'none'
+              ? 'none'
+              : useGradient ? `url(#${shapeGradientId(shape)})` : shape.fill)
           : 'none';
         // fillRule="evenodd" makes inner rings render as transparent holes.
         // The selection rect lives inside the same transformed group so it tracks

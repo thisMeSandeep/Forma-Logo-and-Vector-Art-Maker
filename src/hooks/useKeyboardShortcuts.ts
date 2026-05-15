@@ -41,23 +41,36 @@ export function useKeyboardShortcuts() {
 
       const store = useAppStore.getState();
 
-      // Cmd/Ctrl+D — duplicate selected shape
-      if (ctrl && e.key === 'd' && store.selectedShapeId) {
-        e.preventDefault();
-        store.duplicateShape(store.selectedShapeId);
-        return;
+      // Cmd/Ctrl+D — duplicate selected shape or text
+      if (ctrl && e.key === 'd') {
+        if (store.selectedShapeId) {
+          e.preventDefault();
+          store.duplicateShape(store.selectedShapeId);
+          return;
+        }
+        if (store.selectedTextId) {
+          e.preventDefault();
+          store.duplicateText(store.selectedTextId);
+          return;
+        }
       }
 
-      // Z-order brackets
-      if (!ctrl && store.selectedShapeId) {
+      // Z-order brackets — works for shapes and text
+      if (!ctrl && (store.selectedShapeId || store.selectedTextId)) {
+        const dir = (forward: boolean): 'front' | 'back' | 'forward' | 'backward' => {
+          if (e.shiftKey) return forward ? 'front' : 'back';
+          return forward ? 'forward' : 'backward';
+        };
         if (e.key === ']') {
           e.preventDefault();
-          store.reorderShape(store.selectedShapeId, e.shiftKey ? 'front' : 'forward');
+          if (store.selectedShapeId) store.reorderShape(store.selectedShapeId, dir(true));
+          else if (store.selectedTextId) store.reorderText(store.selectedTextId, dir(true));
           return;
         }
         if (e.key === '[') {
           e.preventDefault();
-          store.reorderShape(store.selectedShapeId, e.shiftKey ? 'back' : 'backward');
+          if (store.selectedShapeId) store.reorderShape(store.selectedShapeId, dir(false));
+          else if (store.selectedTextId) store.reorderText(store.selectedTextId, dir(false));
           return;
         }
       }

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TopBar } from './components/toolbar/TopBar';
+import { useAppStore } from './store/useAppStore';
+import { ensureFontLoaded } from './lib/fonts';
 import { DrawingCanvas } from './components/canvas/DrawingCanvas';
 import { CanvasOverlay } from './components/canvas/CanvasOverlay';
 import { CanvasContextMenu } from './components/canvas/CanvasContextMenu';
@@ -12,6 +14,13 @@ import { useIsMobile } from './hooks/use-mobile';
 
 export default function App() {
   useKeyboardShortcuts();
+  // Preload Google fonts referenced by persisted texts + the current text
+  // default, so existing content renders correctly on first paint.
+  useEffect(() => {
+    const state = useAppStore.getState();
+    ensureFontLoaded(state.textFontFamily);
+    for (const text of state.texts) ensureFontLoaded(text.fontFamily);
+  }, []);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // Reset sidebarOpen when the viewport crosses the mobile breakpoint.

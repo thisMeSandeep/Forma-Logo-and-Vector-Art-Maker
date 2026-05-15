@@ -57,7 +57,9 @@ export function gradientEndpoints(angleDeg: number) {
 export function shapeStylingAttrs(shape: Shape, baseFillOpacity?: number) {
   const closed = shape.closed ?? true;
   const fillColor = closed
-    ? (shapeUsesGradient(shape) ? `url(#${shapeGradientId(shape)})` : shape.fill)
+    ? (shape.fillKind === 'none'
+        ? 'none'
+        : shapeUsesGradient(shape) ? `url(#${shapeGradientId(shape)})` : shape.fill)
     : 'none';
   return {
     fill: fillColor,

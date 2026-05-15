@@ -19,6 +19,7 @@ import {
   textStrokeDashArray,
   textStrokeLinecap,
 } from './textStyle';
+import { buildEmbeddedFontCss } from './fonts';
 import { textBBox, textMatrix, textTransformString } from './textGeometry';
 import { applyShapeMatrix } from './geometry';
 
@@ -78,8 +79,10 @@ function getBoundingBox(
   };
 }
 
-// Builds a standalone SVG string containing only the shapes (no grid)
-function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
+// Builds a standalone SVG string containing only the shapes (no grid).
+// Async because Google fonts referenced by texts are inlined as @font-face
+// blocks with base64-encoded woff2 payloads, which requires network fetches.
+async function buildShapesSVG(shapes: Shape[], texts: TextItem[]): Promise<string> {
   const { x, y, w, h } = getBoundingBox(shapes, texts);
 
   // Collect per-shape filter/gradient defs alongside the shared arrowhead marker.
@@ -88,7 +91,14 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
     '<marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke" /></marker>';
   const shapeDefs = shapes.flatMap((sh) => shapeDefsMarkup(sh)).map((p) => p.markup).join('');
   const textDefs  = texts.flatMap((t)  => textDefsMarkup(t)).map((p) => p.markup).join('');
-  const defsInner = (hasArrow ? arrowMarker : '') + shapeDefs + textDefs;
+  // Embed @font-face rules for every Google font referenced. Wrapped in CDATA
+  // so '>' / '<' inside `local(...)` strings don't trip up XML parsers.
+  const families = Array.from(new Set(texts.map((t) => t.fontFamily)));
+  const fontCss = await buildEmbeddedFontCss(families);
+  const fontStyle = fontCss
+    ? `<style type="text/css"><![CDATA[\n${fontCss}\n]]></style>`
+    : '';
+  const defsInner = fontStyle + (hasArrow ? arrowMarker : '') + shapeDefs + textDefs;
   const defsBlock = defsInner ? `  <defs>${defsInner}</defs>` : '';
 
   const pathMarkup = shapes
@@ -104,7 +114,9 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
 
       const useGradient = closed && shapeUsesGradient(shape);
       const fillValue = closed
-        ? (useGradient ? `url(#${shapeGradientId(shape)})` : shape.fill)
+        ? (shape.fillKind === 'none'
+            ? 'none'
+            : useGradient ? `url(#${shapeGradientId(shape)})` : shape.fill)
         : 'none';
       const fillAttr = `fill="${fillValue}"`;
 
@@ -164,34 +176,41 @@ function triggerDownload(url: string, filename: string): void {
   a.click();
 }
 
-export function exportSVG(shapes: Shape[], texts: TextItem[]): void {
+export async function exportSVG(shapes: Shape[], texts: TextItem[]): Promise<void> {
   if (shapes.length === 0 && texts.length === 0) return;
-  const svgString = buildShapesSVG(shapes, texts);
+  const svgString = await buildShapesSVG(shapes, texts);
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
   triggerDownload(url, 'forma-export.svg');
   URL.revokeObjectURL(url);
 }
 
-export function exportPNG(shapes: Shape[], texts: TextItem[], scale: number = EXPORT_PNG_SCALE): void {
+export async function exportPNG(shapes: Shape[], texts: TextItem[], scale: number = EXPORT_PNG_SCALE): Promise<void> {
   if (shapes.length === 0 && texts.length === 0) return;
-  const svgString = buildShapesSVG(shapes, texts);
+  const svgString = await buildShapesSVG(shapes, texts);
   const { w, h } = getBoundingBox(shapes, texts);
 
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
 
-  const img = new Image();
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    // Scale up so the PNG is crisp at display sizes
-    canvas.width = w * scale;
-    canvas.height = h * scale;
-    const ctx = canvas.getContext('2d')!;
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0, w, h);
-    URL.revokeObjectURL(url);
-    triggerDownload(canvas.toDataURL('image/png'), `forma-export@${scale}x.png`);
-  };
-  img.src = url;
+  await new Promise<void>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      // Scale up so the PNG is crisp at display sizes
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+      const ctx = canvas.getContext('2d')!;
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      triggerDownload(canvas.toDataURL('image/png'), `forma-export@${scale}x.png`);
+      resolve();
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to rasterize SVG'));
+    };
+    img.src = url;
+  });
 }

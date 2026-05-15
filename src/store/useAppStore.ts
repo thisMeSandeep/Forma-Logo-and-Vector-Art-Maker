@@ -41,7 +41,13 @@ import {
   withRotationDelta,
   withTransformPatch,
 } from './actions/shapes';
-import { patchSelectedText } from './actions/text';
+import {
+  duplicatedText,
+  flippedText,
+  patchSelectedText,
+  reorderedTexts,
+  withTextRotationDelta,
+} from './actions/text';
 import { zoomedViewBoxCenter } from './actions/viewport';
 import type {
   AppState,
@@ -478,6 +484,41 @@ export const useAppStore = create<AppState>()(
         resetTextTransform: (id: string) =>
           set((s) => ({
             texts: s.texts.map((t) => (t.id === id ? { ...t, transform: undefined } : t)),
+            history: pushHistory(),
+            future: [],
+          })),
+
+        duplicateText: (id) => {
+          const { texts, gridSize } = get();
+          const source = texts.find((t) => t.id === id);
+          if (!source) return;
+          const copy = duplicatedText(source, gridSize);
+          set({
+            texts: [...texts, copy],
+            selectedTextId: copy.id,
+            editingTextId: null,
+            history: pushHistory(),
+            future: [],
+          });
+        },
+
+        flipText: (id, axis) =>
+          set((s) => ({
+            texts: s.texts.map((t) => (t.id === id ? flippedText(t, axis) : t)),
+            history: pushHistory(),
+            future: [],
+          })),
+
+        rotateText: (id, deltaDegrees) =>
+          set((s) => ({
+            texts: s.texts.map((t) => (t.id === id ? withTextRotationDelta(t, deltaDegrees) : t)),
+            history: pushHistory(),
+            future: [],
+          })),
+
+        reorderText: (id, direction) =>
+          set((s) => ({
+            texts: reorderedTexts(s.texts, id, direction),
             history: pushHistory(),
             future: [],
           })),
