@@ -166,7 +166,7 @@ export function HistoryBar() {
               <AlertDialogCancel className="h-8 text-xs">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={resetCanvas}
-                className="h-8 text-xs gap-1.5 bg-[oklch(0.6_0.2_25)] hover:bg-[oklch(0.55_0.22_25)] text-white"
+                className="h-8 text-xs gap-1.5 bg-foreground hover:bg-[oklch(0.55_0.22_25)] text-white"
               >
                 <Trash2 size={13} />
                 Reset canvas
