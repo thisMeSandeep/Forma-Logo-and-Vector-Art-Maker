@@ -11,7 +11,14 @@ import {
   strokeDashArray,
   strokeLinecap,
 } from './shapeStyle';
-import { textDefsMarkup, textFillRef, textStrokeDashArray, textStrokeLinecap } from './textStyle';
+import {
+  textDefsMarkup,
+  textFillRef,
+  textFilterId,
+  textNeedsFilter,
+  textStrokeDashArray,
+  textStrokeLinecap,
+} from './textStyle';
 import { textBBox, textMatrix, textTransformString } from './textGeometry';
 import { applyShapeMatrix } from './geometry';
 
@@ -136,7 +143,8 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
       const dashAttr        = dash ? ` stroke-dasharray="${dash}"` : '';
       const cap = hasStroke ? textStrokeLinecap(text) : undefined;
       const capAttr         = cap ? ` stroke-linecap="${cap}"` : '';
-      return `  <text x="${text.x}" y="${text.y}" text-anchor="${text.anchor}" font-family="${escapeXml(text.fontFamily)}" font-size="${text.fontSize}" font-weight="${text.fontWeight}"${italicAttr}${decorationAttr}${trackingAttr}${baselineAttr}${opacityAttr}${transformAttr}${strokeAttr}${dashAttr}${capAttr} fill="${fillAttr}">${escapeXml(text.content)}</text>`;
+      const filterAttr      = textNeedsFilter(text) ? ` filter="url(#${textFilterId(text)})"` : '';
+      return `  <text x="${text.x}" y="${text.y}" text-anchor="${text.anchor}" font-family="${escapeXml(text.fontFamily)}" font-size="${text.fontSize}" font-weight="${text.fontWeight}"${italicAttr}${decorationAttr}${trackingAttr}${baselineAttr}${opacityAttr}${transformAttr}${strokeAttr}${dashAttr}${capAttr}${filterAttr} fill="${fillAttr}">${escapeXml(text.content)}</text>`;
     })
     .join('\n');
 

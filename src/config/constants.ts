@@ -110,6 +110,14 @@ export const TEXT_STROKE_WIDTH_MIN = 0;
 export const TEXT_STROKE_WIDTH_MAX = 20;
 export const TEXT_STROKE_STYLE_DEFAULT = 'solid' as const;
 
+// Text effect presets — used when switching effect kind so the slider has a
+// sane starting point. Mirrors SHADOW_DEFAULT for shapes.
+export const TEXT_EFFECT_SHADOW_DEFAULT      = { kind: 'shadow',      x: 2, y: 3, blur: 6, color: '#00000066' } as const;
+export const TEXT_EFFECT_BLUR_DEFAULT        = { kind: 'blur',        radius: 2 } as const;
+export const TEXT_EFFECT_GLOW_DEFAULT        = { kind: 'glow',        color: '#22d3ee', radius: 4 } as const;
+export const TEXT_EFFECT_LONG_SHADOW_DEFAULT = { kind: 'long-shadow', length: 20, angle: 45, color: '#00000033' } as const;
+export const TEXT_EFFECT_EXTRUDE_DEFAULT     = { kind: 'extrude',     depth: 6, angle: 45, color: '#1f2937' } as const;
+
 // Full variable-font weight ladder. Geist Variable supports the whole range.
 export const TEXT_FONT_WEIGHT_OPTIONS: { label: string; value: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 }[] = [
   { label: 'Thin',        value: 100 },

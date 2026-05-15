@@ -4,9 +4,12 @@ import type { TextItem } from '../../types';
 import { screenToWorld } from '../../hooks/useViewBox';
 import { gradientEndpoints } from '../../lib/shapeStyle';
 import {
+  textEffectFilterInner,
   textFillKind,
   textFillRef,
+  textFilterId,
   textLinearId,
+  textNeedsFilter,
   textPatternId,
   textRadialId,
   textStrokeDashArray,
@@ -179,6 +182,23 @@ export function TextLayer() {
           }
           return null;
         })}
+        {texts.map((text) => {
+          if (!textNeedsFilter(text) || !text.effect) return null;
+          // The filter graph for long-shadow/extrude has a dynamic step count,
+          // so we serialize it once and inject as HTML rather than building
+          // each <fe*> element as JSX.
+          return (
+            <filter
+              key={`fx-${text.id}`}
+              id={textFilterId(text)}
+              x="-50%"
+              y="-50%"
+              width="200%"
+              height="200%"
+              dangerouslySetInnerHTML={{ __html: textEffectFilterInner(text.effect) }}
+            />
+          );
+        })}
       </defs>
       {texts.map((text) => {
         const selected = text.id === selectedTextId;
@@ -266,6 +286,7 @@ export function TextLayer() {
                 strokeLinejoin="round"
                 paintOrder="stroke fill"
                 opacity={text.opacity != null && text.opacity !== 1 ? text.opacity : undefined}
+                filter={textNeedsFilter(text) ? `url(#${textFilterId(text)})` : undefined}
                 dominantBaseline={text.baseline ?? 'alphabetic'}
                 className="select-none"
                 style={{ cursor: 'move' }}

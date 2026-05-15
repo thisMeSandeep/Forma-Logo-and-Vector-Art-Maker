@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Italic,
   Minus,
+  Sparkles,
   Spline,
   Strikethrough,
   Type,
@@ -23,6 +24,11 @@ import { NumberField } from './NumberField';
 import {
   GRADIENT_DEFAULT,
   RADIAL_GRADIENT_DEFAULT,
+  TEXT_EFFECT_BLUR_DEFAULT,
+  TEXT_EFFECT_EXTRUDE_DEFAULT,
+  TEXT_EFFECT_GLOW_DEFAULT,
+  TEXT_EFFECT_LONG_SHADOW_DEFAULT,
+  TEXT_EFFECT_SHADOW_DEFAULT,
   TEXT_FONT_OPTIONS,
   TEXT_FONT_SIZE_MAX,
   TEXT_FONT_SIZE_MIN,
@@ -39,6 +45,8 @@ import type {
   TextAnchor,
   TextBaseline,
   TextDecoration,
+  TextEffect,
+  TextEffectKind,
   TextFillKind,
   TextItem,
 } from '../../types';
@@ -344,6 +352,229 @@ function FillSection({
   );
 }
 
+// Default params per effect kind. Keeping these in one place means picking a
+// kind from the dropdown always lands on a usable preset.
+const EFFECT_DEFAULTS: Record<Exclude<TextEffectKind, 'none'>, TextEffect> = {
+  shadow:        { ...TEXT_EFFECT_SHADOW_DEFAULT },
+  blur:          { ...TEXT_EFFECT_BLUR_DEFAULT },
+  glow:          { ...TEXT_EFFECT_GLOW_DEFAULT },
+  'long-shadow': { ...TEXT_EFFECT_LONG_SHADOW_DEFAULT },
+  extrude:       { ...TEXT_EFFECT_EXTRUDE_DEFAULT },
+};
+
+function EffectSection({
+  text,
+  patch,
+}: {
+  text: TextItem;
+  patch: (p: Partial<TextItem>) => void;
+}) {
+  const effect: TextEffect = text.effect ?? { kind: 'none' };
+  const kind = effect.kind;
+
+  function changeKind(next: TextEffectKind) {
+    if (next === kind) return;
+    if (next === 'none') patch({ effect: { kind: 'none' } });
+    else patch({ effect: EFFECT_DEFAULTS[next] });
+  }
+
+  // Narrowed mutators — TypeScript can't follow the `kind` field through patch().
+  function patchEffect(next: TextEffect) {
+    patch({ effect: next });
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-2 pt-2 text-[11px] uppercase tracking-[0.1em] text-muted-foreground/80">
+        <Sparkles size={11} />
+        <span>Effect</span>
+      </div>
+
+      <PropertyRow label="Kind">
+        <select
+          value={kind}
+          onChange={(e) => changeKind(e.target.value as TextEffectKind)}
+          className="h-7 w-32 rounded border bg-foreground/[0.03] px-2 text-xs outline-none"
+          style={{ borderColor: 'var(--panel-border)' }}
+        >
+          <option value="none">None</option>
+          <option value="shadow">Drop shadow</option>
+          <option value="blur">Blur</option>
+          <option value="glow">Glow</option>
+          <option value="long-shadow">Long shadow</option>
+          <option value="extrude">3D extrude</option>
+        </select>
+      </PropertyRow>
+
+      {effect.kind === 'shadow' && (
+        <>
+          <PropertyRow label="X">
+            <NumberField
+              value={effect.x}
+              onChange={(v) => patchEffect({ ...effect, x: v })}
+              step={1}
+              suffix="px"
+            />
+          </PropertyRow>
+          <PropertyRow label="Y">
+            <NumberField
+              value={effect.y}
+              onChange={(v) => patchEffect({ ...effect, y: v })}
+              step={1}
+              suffix="px"
+            />
+          </PropertyRow>
+          <PropertyRow label="Blur">
+            <NumberField
+              value={effect.blur}
+              onChange={(v) => patchEffect({ ...effect, blur: Math.max(0, v) })}
+              step={1}
+              min={0}
+              suffix="px"
+            />
+          </PropertyRow>
+          <ColorRow
+            label="Color"
+            value={effect.color.slice(0, 7)}
+            onChange={(c) => patchEffect({ ...effect, color: c })}
+          />
+        </>
+      )}
+
+      {effect.kind === 'blur' && (
+        <>
+          <PropertyRow label="Radius">
+            <NumberField
+              value={effect.radius}
+              onChange={(v) => patchEffect({ ...effect, radius: Math.max(0, v) })}
+              step={0.5}
+              min={0}
+              suffix="px"
+            />
+          </PropertyRow>
+          <Slider
+            min={0}
+            max={20}
+            step={0.5}
+            value={[effect.radius]}
+            onValueChange={([v]) => patchEffect({ ...effect, radius: v })}
+          />
+        </>
+      )}
+
+      {effect.kind === 'glow' && (
+        <>
+          <ColorRow
+            label="Color"
+            value={effect.color}
+            onChange={(c) => patchEffect({ ...effect, color: c })}
+          />
+          <PropertyRow label="Radius">
+            <NumberField
+              value={effect.radius}
+              onChange={(v) => patchEffect({ ...effect, radius: Math.max(0, v) })}
+              step={0.5}
+              min={0}
+              suffix="px"
+            />
+          </PropertyRow>
+          <Slider
+            min={0}
+            max={30}
+            step={0.5}
+            value={[effect.radius]}
+            onValueChange={([v]) => patchEffect({ ...effect, radius: v })}
+          />
+        </>
+      )}
+
+      {effect.kind === 'long-shadow' && (
+        <>
+          <PropertyRow label="Length">
+            <NumberField
+              value={effect.length}
+              onChange={(v) => patchEffect({ ...effect, length: Math.max(1, v) })}
+              step={1}
+              min={1}
+              max={40}
+              suffix="px"
+            />
+          </PropertyRow>
+          <Slider
+            min={1}
+            max={40}
+            step={1}
+            value={[effect.length]}
+            onValueChange={([v]) => patchEffect({ ...effect, length: v })}
+          />
+          <PropertyRow label="Angle">
+            <NumberField
+              value={effect.angle}
+              onChange={(v) => patchEffect({ ...effect, angle: v })}
+              step={1}
+              suffix="°"
+            />
+          </PropertyRow>
+          <Slider
+            min={0}
+            max={360}
+            step={1}
+            value={[effect.angle]}
+            onValueChange={([v]) => patchEffect({ ...effect, angle: v })}
+          />
+          <ColorRow
+            label="Color"
+            value={effect.color.slice(0, 7)}
+            onChange={(c) => patchEffect({ ...effect, color: c })}
+          />
+        </>
+      )}
+
+      {effect.kind === 'extrude' && (
+        <>
+          <PropertyRow label="Depth">
+            <NumberField
+              value={effect.depth}
+              onChange={(v) => patchEffect({ ...effect, depth: Math.max(1, v) })}
+              step={1}
+              min={1}
+              max={30}
+              suffix="px"
+            />
+          </PropertyRow>
+          <Slider
+            min={1}
+            max={30}
+            step={1}
+            value={[effect.depth]}
+            onValueChange={([v]) => patchEffect({ ...effect, depth: v })}
+          />
+          <PropertyRow label="Angle">
+            <NumberField
+              value={effect.angle}
+              onChange={(v) => patchEffect({ ...effect, angle: v })}
+              step={1}
+              suffix="°"
+            />
+          </PropertyRow>
+          <Slider
+            min={0}
+            max={360}
+            step={1}
+            value={[effect.angle]}
+            onValueChange={([v]) => patchEffect({ ...effect, angle: v })}
+          />
+          <ColorRow
+            label="Color"
+            value={effect.color.slice(0, 7)}
+            onChange={(c) => patchEffect({ ...effect, color: c })}
+          />
+        </>
+      )}
+    </>
+  );
+}
+
 export function TextSection() {
   const selectedTextId = useAppStore((s) => s.selectedTextId);
   const selectedText   = useAppStore((s) =>
@@ -535,6 +766,8 @@ export function TextSection() {
           </div>
         </PropertyRow>
       )}
+
+      <EffectSection text={selectedText} patch={patchText} />
 
       <PropertyRow label="Anchor">
         <div

@@ -85,6 +85,18 @@ export type TextBaseline = 'hanging' | 'middle' | 'alphabetic' | 'ideographic';
 // 'none' is outline-only — the glyphs render only their stroke.
 export type TextFillKind = 'none' | 'solid' | 'linear' | 'radial' | 'image';
 
+// Text effects render via a single SVG <filter> per text node. Only one kind
+// is active at a time — picking a new effect replaces the previous one.
+export type TextEffectKind = 'none' | 'shadow' | 'blur' | 'glow' | 'long-shadow' | 'extrude';
+
+export type TextEffect =
+  | { kind: 'none' }
+  | { kind: 'shadow'; x: number; y: number; blur: number; color: string }
+  | { kind: 'blur'; radius: number }
+  | { kind: 'glow'; color: string; radius: number }
+  | { kind: 'long-shadow'; length: number; angle: number; color: string }
+  | { kind: 'extrude'; depth: number; angle: number; color: string };
+
 export type TextItem = {
   id: string;
   x: number;
@@ -113,6 +125,8 @@ export type TextItem = {
   strokeStyle?: StrokeStyle;
   // Free-form transform applied around the local bbox center, mirrors Shape.transform.
   transform?: ShapeTransform;
+  // Visual effect (drop shadow, blur, glow, long shadow, extrude).
+  effect?: TextEffect;
 };
 
 export type Tool =
