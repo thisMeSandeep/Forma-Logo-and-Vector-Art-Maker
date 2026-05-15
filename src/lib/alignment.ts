@@ -1,5 +1,5 @@
 import type { Shape, ViewBox } from '../types';
-import { bakedShapeRings, bboxOfRings, type BBox } from './geometry';
+import { bakedShapeControls, bakedShapeRings, bboxOfRingsWithControls, type BBox } from './geometry';
 
 // A single guide line. `pos` is the world coordinate along the perpendicular
 // axis; `span` is the extent along the parallel axis (used so the line stops
@@ -12,7 +12,11 @@ export type Guide = {
 
 // Visual (post-transform) AABB of a shape, in world coordinates.
 export function visualBBox(shape: Shape): BBox {
-  return bboxOfRings(bakedShapeRings(shape));
+  return bboxOfRingsWithControls(
+    bakedShapeRings(shape),
+    bakedShapeControls(shape),
+    shape.closed !== false,
+  );
 }
 
 function xCandidates(b: BBox): [number, number, number] {

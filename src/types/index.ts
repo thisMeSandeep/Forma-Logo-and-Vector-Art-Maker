@@ -75,6 +75,12 @@ export type Shape = {
   fillKind?: FillKind;          // 'solid' (default), 'linear' (uses fillGradient), 'image' (uses fillImage), or 'none'
   fillGradient?: LinearGradient;
   fillImage?: ImageFill;
+  // Per-edge bulge in world units. Same outer/inner structure as `points`.
+  // Length matches the ring; index i is the bulge for the edge from point i
+  // to point (i+1) mod n. 0 / undefined → straight line, positive → bows left
+  // of edge direction, negative → bows right. Open paths use the first n-1
+  // entries; the wrap-around entry is ignored.
+  edgeBulges?: number[][];
 };
 
 export type TextAnchor = 'start' | 'middle' | 'end';

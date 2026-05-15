@@ -1,7 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { bboxOfRings, shapeMatrix, applyShapeMatrix } from '../../lib/geometry';
+import {
+  applyShapeMatrix,
+  bboxOfShape,
+  bezierControlForBulge,
+  edgePerpendicular,
+  shapeMatrix,
+  transformToMatrix,
+} from '../../lib/geometry';
 import { IDENTITY_TRANSFORM } from '../../types';
+import type { Point } from '../../types';
 import { screenToWorld } from '../../hooks/useViewBox';
 
 type CornerRole = 'nw' | 'ne' | 'se' | 'sw';
@@ -36,7 +44,22 @@ type RotateDrag = {
   angleOffset: number;
 };
 
-type Drag = ScaleDrag | RotateDrag;
+type BulgeDrag = {
+  kind: 'bulge';
+  shapeId: string;
+  svg: SVGSVGElement;
+  ringIdx: number;
+  edgeIdx: number;
+  // Local-space midpoint of the edge and its perpendicular unit vector. The
+  // new bulge = perp · (cursor_local − midpoint), so we capture both once at
+  // drag start.
+  midpointLocal: Point;
+  perpLocal: Point;
+  // Inverse 2x2 of the shape's transform, used to pull cursor world → local.
+  inv: { a: number; b: number; c: number; d: number; cx: number; cy: number };
+};
+
+type Drag = ScaleDrag | RotateDrag | BulgeDrag;
 
 export function SelectionHandles() {
   const activeTool          = useAppStore((s) => s.activeTool);
@@ -46,6 +69,7 @@ export function SelectionHandles() {
   const viewBox             = useAppStore((s) => s.viewBox);
   const initialViewBox      = useAppStore((s) => s.initialViewBox);
   const setShapeTransform   = useAppStore((s) => s.setShapeTransform);
+  const updateShape         = useAppStore((s) => s.updateShape);
   const commitHistory       = useAppStore((s) => s.commitHistory);
 
   const dragRef = useRef<Drag | null>(null);
@@ -59,6 +83,27 @@ export function SelectionHandles() {
       const vb = useAppStore.getState().viewBox;
       const cursor = screenToWorld(e.clientX, e.clientY, rect, vb);
       movedRef.current = true;
+
+      if (drag.kind === 'bulge') {
+        // Project the cursor back into shape-local space, then read off the
+        // signed perpendicular distance from the edge midpoint.
+        const dx = cursor.x - drag.inv.cx;
+        const dy = cursor.y - drag.inv.cy;
+        const localX = drag.inv.a * dx + drag.inv.c * dy + drag.inv.cx;
+        const localY = drag.inv.b * dx + drag.inv.d * dy + drag.inv.cy;
+        const px = localX - drag.midpointLocal.x;
+        const py = localY - drag.midpointLocal.y;
+        const bulge = drag.perpLocal.x * px + drag.perpLocal.y * py;
+        const shapeNow = useAppStore.getState().shapes.find((sh) => sh.id === drag.shapeId);
+        if (!shapeNow) return;
+        const newBulges = (shapeNow.edgeBulges ?? shapeNow.points.map((r) => new Array(r.length).fill(0))).map((row, idx) =>
+          idx === drag.ringIdx
+            ? row.map((v, i) => (i === drag.edgeIdx ? bulge : v))
+            : row.slice(),
+        );
+        updateShape(drag.shapeId, { edgeBulges: newBulges });
+        return;
+      }
 
       if (drag.kind === 'rotate') {
         const angle = Math.atan2(cursor.y - drag.pivot.y, cursor.x - drag.pivot.x);
@@ -99,7 +144,7 @@ export function SelectionHandles() {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [setShapeTransform, commitHistory]);
+  }, [setShapeTransform, updateShape, commitHistory]);
 
   if (!shape || activeTool !== 'select' || !initialViewBox) return null;
 
@@ -109,7 +154,7 @@ export function SelectionHandles() {
   const STROKE     = 1.25 * worldPerPx;
   const ROT_OFFSET = 22 * worldPerPx;
 
-  const bbox = bboxOfRings(shape.points);
+  const bbox = bboxOfShape(shape);
   const m = shapeMatrix(shape);
   const cornerRoles: CornerRole[] = ['nw', 'ne', 'se', 'sw'];
   const cornersWorld = cornerRoles.map((role) => ({ role, world: applyShapeMatrix(m, cornerLocal(role, bbox)) }));
@@ -145,6 +190,51 @@ export function SelectionHandles() {
     movedRef.current = false;
   }
 
+  // Inverse of the shape's transform — needed to map cursor (world) back to
+  // the shape's local frame while dragging bulge handles. Composed from the
+  // negated transform attrs at the same pivot.
+  function inverseShapeMatrix() {
+    if (!shape) return null;
+    const t = shape.transform ?? IDENTITY_TRANSFORM;
+    const inv = {
+      rotation: -t.rotation,
+      scaleX: 1 / (t.scaleX || 1),
+      scaleY: 1 / (t.scaleY || 1),
+      skewX: -t.skewX,
+      skewY: -t.skewY,
+    };
+    return transformToMatrix(inv, m.cx, m.cy);
+  }
+
+  function startBulgeDrag(
+    e: React.PointerEvent<SVGCircleElement>,
+    ringIdx: number,
+    edgeIdx: number,
+  ) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const svg = e.currentTarget.ownerSVGElement;
+    if (!svg || !shape) return;
+    const ring = shape.points[ringIdx];
+    const p0 = ring[edgeIdx];
+    const p1 = ring[(edgeIdx + 1) % ring.length];
+    const midpointLocal = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+    const perpLocal = edgePerpendicular(p0, p1);
+    const inv = inverseShapeMatrix();
+    if (!inv) return;
+    dragRef.current = {
+      kind: 'bulge',
+      shapeId: shape.id,
+      svg,
+      ringIdx,
+      edgeIdx,
+      midpointLocal,
+      perpLocal,
+      inv,
+    };
+    movedRef.current = false;
+  }
+
   function startRotate(e: React.PointerEvent<SVGCircleElement>) {
     if (e.button !== 0) return;
     e.stopPropagation();
@@ -162,6 +252,27 @@ export function SelectionHandles() {
       angleOffset: cursorAngle - rotationRad,
     };
     movedRef.current = false;
+  }
+
+  // Per-edge bulge handles, only on closed shapes. Each handle sits at the
+  // edge's apex (midpoint + bulge * perpendicular) in local space, then is
+  // projected to world via the shape's matrix. Dragging adjusts the bulge.
+  // Hide handles when the bbox is degenerate (single line, etc).
+  const showBulgeHandles = shape.closed !== false && bbox.w > 0 && bbox.h > 0;
+  const bulgeHandles: { ring: number; edge: number; world: Point }[] = [];
+  if (showBulgeHandles) {
+    for (let r = 0; r < shape.points.length; r++) {
+      const ring = shape.points[r];
+      for (let i = 0; i < ring.length; i++) {
+        const p0 = ring[i];
+        const p1 = ring[(i + 1) % ring.length];
+        const b = shape.edgeBulges?.[r]?.[i] ?? 0;
+        const apex = b !== 0
+          ? bezierControlForBulge(p0, p1, b / 2)  // apex = midpoint + bulge*perp; control = midpoint + 2*bulge*perp
+          : { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+        bulgeHandles.push({ ring: r, edge: i, world: applyShapeMatrix(m, apex) });
+      }
+    }
   }
 
   return (
@@ -204,6 +315,22 @@ export function SelectionHandles() {
           style={{ cursor: cornerCursor(role, rotationRad) }}
           onPointerDown={(e) => startScale(e, role)}
         />
+      ))}
+
+      {bulgeHandles.map(({ ring, edge, world }) => (
+        <circle
+          key={`bulge-${ring}-${edge}`}
+          cx={world.x}
+          cy={world.y}
+          r={HANDLE_R * 0.75}
+          fill="var(--canvas-bg)"
+          stroke="var(--cursor-dot-fill)"
+          strokeWidth={STROKE}
+          style={{ cursor: 'crosshair' }}
+          onPointerDown={(e) => startBulgeDrag(e, ring, edge)}
+        >
+          <title>Drag to curve this edge</title>
+        </circle>
       ))}
     </g>
   );

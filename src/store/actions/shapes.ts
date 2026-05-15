@@ -27,7 +27,15 @@ export function duplicatedShape(source: Shape, gridSize: number): Shape {
 export function flippedShape(shape: Shape, axis: 'horizontal' | 'vertical'): Shape {
   const bbox = bboxOfRings(shape.points);
   const center = { x: bbox.x + bbox.w / 2, y: bbox.y + bbox.h / 2 };
-  return { ...shape, points: flipRings(shape.points, axis, center) };
+  const flippedRings = flipRings(shape.points, axis, center);
+  // Mirror + reverse the bulges to match the reversed ring winding. After
+  // reversal, new edge i is the reverse of old edge (n-2-i) — perpendicular
+  // direction flips, so the bulge sign flips too.
+  const flippedBulges = shape.edgeBulges?.map((row) => {
+    const n = row.length;
+    return Array.from({ length: n }, (_, i) => -row[(n - 2 - i + n) % n]);
+  });
+  return { ...shape, points: flippedRings, edgeBulges: flippedBulges };
 }
 
 export function translatedShape(shape: Shape, dx: number, dy: number): Shape {

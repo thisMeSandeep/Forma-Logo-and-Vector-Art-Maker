@@ -1,8 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { CUTOUT_FILL_OPACITY, ALIGN_SNAP_PX } from '../../config/constants';
-import { roundedRingToD, openRingToD } from '../../lib/svgPath';
-import { bboxOfRings, shapeTransformString, type BBox } from '../../lib/geometry';
+import { roundedRingWithControlsToD, openRingWithControlsToD } from '../../lib/svgPath';
+import {
+  bboxOfShape,
+  edgeControls,
+  shapeTransformString,
+  type BBox,
+} from '../../lib/geometry';
 import { findAlignmentSnap, visualBBox } from '../../lib/alignment';
 import {
   gradientEndpoints,
@@ -208,10 +213,17 @@ export function ShapeLayer() {
         const r = shape.cornerRadius ?? 0;
         const transform = shapeTransformString(shape);
         const isSelected = interactive && shape.id === selectedShapeId;
-        const bbox = isSelected ? bboxOfRings(shape.points) : null;
+        const bbox = isSelected ? bboxOfShape(shape) : null;
         const d = closed
-          ? shape.points.map((ring) => roundedRingToD(ring, r)).join(' ')
-          : openRingToD(shape.points[0]);
+          ? shape.points
+              .map((ring, idx) =>
+                roundedRingWithControlsToD(ring, r, edgeControls(ring, shape.edgeBulges?.[idx])),
+              )
+              .join(' ')
+          : openRingWithControlsToD(
+              shape.points[0],
+              edgeControls(shape.points[0], shape.edgeBulges?.[0]),
+            );
         const fillAttr = closed ? shapeFillRef(shape) : 'none';
         // fillRule="evenodd" makes inner rings render as transparent holes.
         // The selection rect lives inside the same transformed group so it tracks

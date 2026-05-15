@@ -47,6 +47,95 @@ export function bboxOfRings(rings: Point[][]): BBox {
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
+// Perpendicular unit vector to an edge, oriented 90° CCW (math convention).
+// Used both for rendering bulges and for drag-to-set computations so the sign
+// stays consistent end-to-end.
+export function edgePerpendicular(p0: Point, p1: Point): Point {
+  const dx = p1.x - p0.x;
+  const dy = p1.y - p0.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) return { x: 0, y: 0 };
+  return { x: -dy / len, y: dx / len };
+}
+
+// Quadratic-Bezier control point that yields the requested bulge: the curve's
+// apex (at t=0.5) sits at midpoint + bulge * perpendicular, since the control
+// point is twice that offset from the midpoint.
+export function bezierControlForBulge(p0: Point, p1: Point, bulge: number): Point {
+  const mx = (p0.x + p1.x) / 2;
+  const my = (p0.y + p1.y) / 2;
+  const perp = edgePerpendicular(p0, p1);
+  return { x: mx + perp.x * 2 * bulge, y: my + perp.y * 2 * bulge };
+}
+
+// Resolves the controls-per-edge array used by path emission and bbox math.
+// Entry i is the quadratic control for edge i (point i → point (i+1) mod n),
+// or null when that edge is straight.
+export function edgeControls(ring: Point[], bulges: number[] | undefined): (Point | null)[] {
+  const n = ring.length;
+  const out: (Point | null)[] = new Array(n).fill(null);
+  if (!bulges) return out;
+  for (let i = 0; i < n; i++) {
+    const b = bulges[i];
+    if (!b) continue;
+    out[i] = bezierControlForBulge(ring[i], ring[(i + 1) % n], b);
+  }
+  return out;
+}
+
+// Extreme values of a quadratic Bezier per axis. The component is monotonic
+// (no interior extreme) when (P0 - 2C + P1) is near zero, which is the case
+// when the control lies on the chord midpoint perpendicular nicely; we still
+// guard the divide.
+function bezierAxisExtreme(p0: number, c: number, p1: number): number | null {
+  const denom = p0 - 2 * c + p1;
+  if (Math.abs(denom) < 1e-9) return null;
+  const t = (p0 - c) / denom;
+  if (t <= 0 || t >= 1) return null;
+  const oneMinusT = 1 - t;
+  return oneMinusT * oneMinusT * p0 + 2 * oneMinusT * t * c + t * t * p1;
+}
+
+// Bounding box that includes curve extremes for any edges with a non-null
+// control point. Falls back to point-only when all edges are straight.
+export function bboxOfRingsWithControls(
+  rings: Point[][],
+  controls: (Point | null)[][],
+  closed = true,
+): BBox {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (let r = 0; r < rings.length; r++) {
+    const ring = rings[r];
+    const ringControls = controls[r] ?? [];
+    for (const p of ring) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    const lastEdge = closed ? ring.length : ring.length - 1;
+    for (let i = 0; i < lastEdge; i++) {
+      const c = ringControls[i];
+      if (!c) continue;
+      const p0 = ring[i];
+      const p1 = ring[(i + 1) % ring.length];
+      const exX = bezierAxisExtreme(p0.x, c.x, p1.x);
+      const exY = bezierAxisExtreme(p0.y, c.y, p1.y);
+      if (exX != null) { if (exX < minX) minX = exX; if (exX > maxX) maxX = exX; }
+      if (exY != null) { if (exY < minY) minY = exY; if (exY > maxY) maxY = exY; }
+    }
+  }
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+// Curve-aware bbox in shape-local space.
+export function bboxOfShape(shape: Shape): BBox {
+  const controls = shape.points.map((ring, r) =>
+    edgeControls(ring, shape.edgeBulges?.[r]),
+  );
+  return bboxOfRingsWithControls(shape.points, controls, shape.closed !== false);
+}
+
 export function translateRings(rings: Point[][], dx: number, dy: number): Point[][] {
   return rings.map((ring) => ring.map((p) => ({ x: p.x + dx, y: p.y + dy })));
 }
@@ -141,4 +230,21 @@ export function bakedShapeRings(shape: Shape): Point[][] {
   if (isIdentity) return shape.points;
   const m = shapeMatrix(shape);
   return shape.points.map((ring) => ring.map((p) => applyShapeMatrix(m, p)));
+}
+
+// Bakes a shape's per-edge controls into world space alongside the points.
+// Returns one (Point|null)[] per ring; entries are null where the edge is
+// straight. Skew/rotate/non-uniform scale all preserve the curve through the
+// baked control, so we get the right shape after the transform is absorbed.
+export function bakedShapeControls(shape: Shape): (Point | null)[][] {
+  const localControls = shape.points.map((ring, r) =>
+    edgeControls(ring, shape.edgeBulges?.[r]),
+  );
+  const t = shape.transform;
+  const isIdentity =
+    !t ||
+    (t.rotation === 0 && t.scaleX === 1 && t.scaleY === 1 && t.skewX === 0 && t.skewY === 0);
+  if (isIdentity) return localControls;
+  const m = shapeMatrix(shape);
+  return localControls.map((ring) => ring.map((c) => (c ? applyShapeMatrix(m, c) : null)));
 }

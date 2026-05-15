@@ -1,8 +1,8 @@
 import type { ImageItem, Shape, TextItem } from '../types';
 import { IDENTITY_TRANSFORM } from '../types';
 import { EXPORT_PADDING, EXPORT_PNG_SCALE } from '../config/constants';
-import { roundedRingToD, openRingToD } from './svgPath';
-import { bakedShapeRings } from './geometry';
+import { roundedRingWithControlsToD, openRingWithControlsToD } from './svgPath';
+import { bakedShapeControls, bakedShapeRings, bboxOfRingsWithControls } from './geometry';
 import {
   shapeDefsMarkup,
   shapeFillRef,
@@ -55,13 +55,14 @@ function getBoundingBox(
 ): { x: number; y: number; w: number; h: number } {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const shape of shapes) {
-    for (const ring of bakedShapeRings(shape)) {
-      for (const pt of ring) {
-        if (pt.x < minX) minX = pt.x;
-        if (pt.y < minY) minY = pt.y;
-        if (pt.x > maxX) maxX = pt.x;
-        if (pt.y > maxY) maxY = pt.y;
-      }
+    const baked = bakedShapeRings(shape);
+    const ctrls = bakedShapeControls(shape);
+    const shapeBox = bboxOfRingsWithControls(baked, ctrls, shape.closed !== false);
+    if (Number.isFinite(shapeBox.x)) {
+      if (shapeBox.x < minX) minX = shapeBox.x;
+      if (shapeBox.y < minY) minY = shapeBox.y;
+      if (shapeBox.x + shapeBox.w > maxX) maxX = shapeBox.x + shapeBox.w;
+      if (shapeBox.y + shapeBox.h > maxY) maxY = shapeBox.y + shapeBox.h;
     }
   }
 
@@ -136,9 +137,10 @@ async function buildShapesSVG(
       // Bake the transform into world-space points so the export is a plain
       // path with no transform attribute — simpler for downstream consumers.
       const baked = bakedShapeRings(shape);
+      const bakedCtrls = bakedShapeControls(shape);
       const d = closed
-        ? baked.map((ring) => roundedRingToD(ring, r)).join(' ')
-        : openRingToD(baked[0]);
+        ? baked.map((ring, idx) => roundedRingWithControlsToD(ring, r, bakedCtrls[idx])).join(' ')
+        : openRingWithControlsToD(baked[0], bakedCtrls[0]);
 
       const fillValue = closed ? shapeFillRef(shape) : 'none';
       const fillAttr = `fill="${fillValue}"`;
