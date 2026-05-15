@@ -107,7 +107,18 @@ export function TextSelectionHandles() {
   const STROKE     = 1.25 * worldPerPx;
   const ROT_OFFSET = 22 * worldPerPx;
 
-  const bbox = textBBox(text);
+  // Expand the bbox by the same world-unit padding used by the dashed selection
+  // rect (drawn by TextLayer) so the corner handles sit exactly on the rect's
+  // border instead of inside it. The transform pivot stays at the un-padded
+  // bbox center so rotate/scale still spin around the glyphs.
+  const rawBBox = textBBox(text);
+  const SELECTION_PAD = 4;
+  const bbox: BBox = {
+    x: rawBBox.x - SELECTION_PAD,
+    y: rawBBox.y - SELECTION_PAD,
+    w: rawBBox.w + SELECTION_PAD * 2,
+    h: rawBBox.h + SELECTION_PAD * 2,
+  };
   const m = textMatrix(text);
   const cornerRoles: CornerRole[] = ['nw', 'ne', 'se', 'sw'];
   const cornersWorld = cornerRoles.map((role) => ({ role, world: applyShapeMatrix(m, cornerLocal(role, bbox)) }));

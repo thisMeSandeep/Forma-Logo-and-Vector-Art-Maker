@@ -31,6 +31,7 @@ import {
   ZOOM_MAX,
 } from '../config/constants';
 import { translateRings } from '../lib/geometry';
+import { textBBox } from '../lib/textGeometry';
 import { alignToCanvasDelta, visualBBox } from '../lib/alignment';
 import {
   applyCutout,
@@ -179,14 +180,13 @@ export const useAppStore = create<AppState>()(
             maxY = Math.max(maxY, bbox.y + bbox.h);
           }
           for (const t of texts) {
-            // Rough estimate of text width; matches canvas TextLayer
-            const w = Math.max(t.fontSize * 2, t.content.length * t.fontSize * 0.62);
-            const x = t.anchor === 'middle' ? t.x - w / 2 : t.anchor === 'end' ? t.x - w : t.x;
-            const y = t.y - t.fontSize;
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x + w);
-            maxY = Math.max(maxY, y + t.fontSize * 1.4);
+            // Use the canvas-measured bbox so fit-to-content covers the full
+            // rendered glyph extent (not a font-agnostic approximation).
+            const b = textBBox(t);
+            minX = Math.min(minX, b.x);
+            minY = Math.min(minY, b.y);
+            maxX = Math.max(maxX, b.x + b.w);
+            maxY = Math.max(maxY, b.y + b.h);
           }
           for (const img of images) {
             minX = Math.min(minX, img.x);

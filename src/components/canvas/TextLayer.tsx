@@ -15,19 +15,7 @@ import {
   textStrokeDashArray,
   textStrokeLinecap,
 } from '../../lib/textStyle';
-import { textTransformString } from '../../lib/textGeometry';
-
-function estimateTextWidth(text: TextItem) {
-  const tracking = text.letterSpacing ?? 0;
-  const base = Math.max(text.fontSize * 2, text.content.length * text.fontSize * 0.62);
-  return base + Math.max(0, text.content.length - 1) * tracking;
-}
-
-function anchorOffset(anchor: TextItem['anchor'], width: number) {
-  if (anchor === 'middle') return -width / 2;
-  if (anchor === 'end') return -width;
-  return 0;
-}
+import { textBBox, textTransformString } from '../../lib/textGeometry';
 
 function editBackgroundFor(fill: string) {
   const hex = fill.replace('#', '');
@@ -203,10 +191,13 @@ export function TextLayer() {
       {texts.map((text) => {
         const selected = text.id === selectedTextId;
         const editing = text.id === editingTextId;
-        const width = estimateTextWidth(text);
-        const x = text.x + anchorOffset(text.anchor, width);
-        const y = text.y - text.fontSize;
-        const height = text.fontSize * 1.4;
+        // Use the canvas-measured bbox so the selection rect and edit input
+        // fully contain the rendered glyphs regardless of font face or size.
+        const box = textBBox(text);
+        const x = box.x;
+        const y = box.y;
+        const width = box.w;
+        const height = box.h;
         const transform = textTransformString(text);
 
         return (

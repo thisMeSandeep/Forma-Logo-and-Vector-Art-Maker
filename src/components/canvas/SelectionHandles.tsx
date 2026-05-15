@@ -154,7 +154,18 @@ export function SelectionHandles() {
   const STROKE     = 1.25 * worldPerPx;
   const ROT_OFFSET = 22 * worldPerPx;
 
-  const bbox = bboxOfShape(shape);
+  // Expand by the same world-unit padding the dashed selection rect (drawn in
+  // ShapeLayer) uses, so corner handles land exactly on the rect's border. The
+  // transform pivot still uses the un-padded bbox so rotate/scale spin around
+  // the actual geometry center.
+  const rawBBox = bboxOfShape(shape);
+  const SELECTION_PAD = 4;
+  const bbox = {
+    x: rawBBox.x - SELECTION_PAD,
+    y: rawBBox.y - SELECTION_PAD,
+    w: rawBBox.w + SELECTION_PAD * 2,
+    h: rawBBox.h + SELECTION_PAD * 2,
+  };
   const m = shapeMatrix(shape);
   const cornerRoles: CornerRole[] = ['nw', 'ne', 'se', 'sw'];
   const cornersWorld = cornerRoles.map((role) => ({ role, world: applyShapeMatrix(m, cornerLocal(role, bbox)) }));

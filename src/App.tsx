@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { TopBar } from './components/toolbar/TopBar';
 import { useAppStore } from './store/useAppStore';
 import { ensureFontLoaded } from './lib/fonts';
+import { clearTextMeasureCache } from './lib/textMeasure';
 import { DrawingCanvas } from './components/canvas/DrawingCanvas';
 import { CanvasOverlay } from './components/canvas/CanvasOverlay';
 import { CanvasContextMenu } from './components/canvas/CanvasContextMenu';
@@ -20,6 +21,22 @@ export default function App() {
     const state = useAppStore.getState();
     ensureFontLoaded(state.textFontFamily);
     for (const text of state.texts) ensureFontLoaded(text.fontFamily);
+  }, []);
+
+  // When web fonts finish loading, the canvas measureText cache was filled
+  // against the system fallback — its widths/ascents are now stale. Clear the
+  // cache and bump `texts` so subscribers re-render with the real metrics.
+  useEffect(() => {
+    if (typeof document === 'undefined' || !document.fonts) return;
+    const onFontsChange = () => {
+      clearTextMeasureCache();
+      useAppStore.setState((s) => ({ texts: s.texts.slice() }));
+    };
+    document.fonts.addEventListener('loadingdone', onFontsChange);
+    // Also schedule one refresh after initial fonts.ready in case the load
+    // events fired before this effect attached.
+    document.fonts.ready.then(onFontsChange).catch(() => {});
+    return () => document.fonts.removeEventListener('loadingdone', onFontsChange);
   }, []);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(true);

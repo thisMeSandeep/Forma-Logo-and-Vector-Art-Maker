@@ -5,14 +5,13 @@ import {
   transformToMatrix,
   transformToString,
 } from './geometry';
+import { measureText } from './textMeasure';
 
-// Width estimate matches TextLayer/exportUtils so handles, drag bbox and export
-// agree on the text's footprint. Keep the multipliers in sync if any of these
-// change.
+// Re-exported for callers that need just the width (TextLayer's edit input
+// sizing, etc). Uses the canvas-measured value so dropping a 200px display
+// face no longer overflows the selection rect.
 export function estimateTextWidth(text: TextItem): number {
-  const tracking = text.letterSpacing ?? 0;
-  const base = Math.max(text.fontSize * 2, text.content.length * text.fontSize * 0.62);
-  return base + Math.max(0, text.content.length - 1) * tracking;
+  return measureText(text).width;
 }
 
 export function textAnchorOffset(anchor: TextItem['anchor'], width: number): number {
@@ -21,12 +20,44 @@ export function textAnchorOffset(anchor: TextItem['anchor'], width: number): num
   return 0;
 }
 
-// Local (un-transformed) bbox in world coordinates.
+// Vertical extent relative to `text.y` for a given dominant-baseline. SVG's
+// baseline keywords change what `y` *means* (alphabetic = baseline, hanging =
+// top edge, middle = vertical center, ideographic ≈ bottom), so the bbox top
+// has to adjust accordingly. Returns the offset from `text.y` to the bbox top.
+function topOffsetForBaseline(
+  baseline: TextItem['baseline'],
+  ascent: number,
+  descent: number,
+): number {
+  switch (baseline) {
+    case 'hanging':     return 0;
+    case 'middle':      return -(ascent + descent) / 2;
+    case 'ideographic': return -(ascent + descent);
+    case 'alphabetic':
+    default:            return -ascent;
+  }
+}
+
+// Local (un-transformed) bbox in world coordinates. Pixel-accurate via canvas
+// measureText, so the selection rect and export bbox both fully contain the
+// rendered glyphs regardless of font face or size.
 export function textBBox(text: TextItem): BBox {
-  const w = estimateTextWidth(text);
-  const x = text.x + textAnchorOffset(text.anchor, w);
-  const y = text.y - text.fontSize;
-  return { x, y, w, h: text.fontSize * 1.4 };
+  const { width, ascent, descent, height } = measureText(text);
+  const x = text.x + textAnchorOffset(text.anchor, width);
+  const top = text.y + topOffsetForBaseline(text.baseline, ascent, descent);
+  // Small horizontal padding to keep italic flourishes and slight stroke
+  // overshoot from clipping at the bbox edge during export.
+  const pad = Math.max(1, text.fontSize * 0.05);
+  // If a stroke is applied, half its width sticks out past the glyph outline.
+  const strokeBleed = (text.strokeWidth ?? 0) > 0 ? (text.strokeWidth ?? 0) / 2 : 0;
+  const xPad = pad + strokeBleed;
+  const yPad = strokeBleed;
+  return {
+    x: x - xPad,
+    y: top - yPad,
+    w: width + xPad * 2,
+    h: height + yPad * 2,
+  };
 }
 
 export function textPivot(text: TextItem): { cx: number; cy: number } {
