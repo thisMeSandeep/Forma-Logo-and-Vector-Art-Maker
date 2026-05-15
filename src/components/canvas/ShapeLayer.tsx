@@ -6,10 +6,13 @@ import { bboxOfRings, shapeTransformString, type BBox } from '../../lib/geometry
 import { findAlignmentSnap, visualBBox } from '../../lib/alignment';
 import {
   gradientEndpoints,
+  shapeFillRef,
   shapeFilterId,
   shapeGradientId,
   shapeNeedsFilter,
+  shapePatternId,
   shapeUsesGradient,
+  shapeUsesImage,
   strokeDashArray,
   strokeLinecap,
 } from '../../lib/shapeStyle';
@@ -175,6 +178,27 @@ export function ShapeLayer() {
               </linearGradient>,
             );
           }
+          if (shapeUsesImage(shape) && shape.fillImage) {
+            defs.push(
+              <pattern
+                key={`p-${shape.id}`}
+                id={shapePatternId(shape)}
+                patternUnits="objectBoundingBox"
+                patternContentUnits="objectBoundingBox"
+                width={1}
+                height={1}
+              >
+                <image
+                  href={shape.fillImage.dataUrl}
+                  x={0}
+                  y={0}
+                  width={1}
+                  height={1}
+                  preserveAspectRatio="xMidYMid slice"
+                />
+              </pattern>,
+            );
+          }
           return defs;
         })}
       </defs>
@@ -188,12 +212,7 @@ export function ShapeLayer() {
         const d = closed
           ? shape.points.map((ring) => roundedRingToD(ring, r)).join(' ')
           : openRingToD(shape.points[0]);
-        const useGradient = closed && shapeUsesGradient(shape);
-        const fillAttr = closed
-          ? (shape.fillKind === 'none'
-              ? 'none'
-              : useGradient ? `url(#${shapeGradientId(shape)})` : shape.fill)
-          : 'none';
+        const fillAttr = closed ? shapeFillRef(shape) : 'none';
         // fillRule="evenodd" makes inner rings render as transparent holes.
         // The selection rect lives inside the same transformed group so it tracks
         // rotation/scale/skew without needing a separate visual-bbox calculation.

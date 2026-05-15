@@ -5,6 +5,7 @@ import { PrimitiveSection } from './PrimitiveSection';
 import { TransformSection } from './TransformSection';
 import { AlignSection } from './AlignSection';
 import { TextSection } from './TextSection';
+import { ImageSection } from './ImageSection';
 import { ExportSection } from './ExportSection';
 import { useIsMobile } from '../../hooks/use-mobile';
 
@@ -99,6 +100,9 @@ function SidebarBody() {
         </div>
         <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
           <TextSection />
+        </div>
+        <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
+          <ImageSection />
         </div>
         <div className="border-t" style={{ borderColor: 'var(--panel-border)' }}>
           <ExportSection />

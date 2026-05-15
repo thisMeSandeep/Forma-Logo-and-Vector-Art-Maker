@@ -3,6 +3,7 @@ import { bboxOfRings } from './geometry';
 
 const FILTER_PREFIX = 'shape-filter-';
 const GRADIENT_PREFIX = 'shape-gradient-';
+const PATTERN_PREFIX = 'shape-pattern-';
 
 export function shapeFilterId(shape: Shape) {
   return `${FILTER_PREFIX}${shape.id}`;
@@ -10,12 +11,27 @@ export function shapeFilterId(shape: Shape) {
 export function shapeGradientId(shape: Shape) {
   return `${GRADIENT_PREFIX}${shape.id}`;
 }
+export function shapePatternId(shape: Shape) {
+  return `${PATTERN_PREFIX}${shape.id}`;
+}
 
 export function shapeNeedsFilter(shape: Shape): boolean {
   return !!(shape.shadow && shape.shadow !== null) || (shape.blur ?? 0) > 0;
 }
 export function shapeUsesGradient(shape: Shape): boolean {
   return shape.fillKind === 'linear' && !!shape.fillGradient;
+}
+export function shapeUsesImage(shape: Shape): boolean {
+  return shape.fillKind === 'image' && !!shape.fillImage;
+}
+
+// Resolves the SVG `fill` attribute value for a closed shape. Open shapes
+// always render fill=none and never reach here.
+export function shapeFillRef(shape: Shape): string {
+  if (shape.fillKind === 'none') return 'none';
+  if (shapeUsesGradient(shape)) return `url(#${shapeGradientId(shape)})`;
+  if (shapeUsesImage(shape))    return `url(#${shapePatternId(shape)})`;
+  return shape.fill;
 }
 
 // stroke-dasharray scales with strokeWidth so dotted/dashed look the same
@@ -56,11 +72,7 @@ export function gradientEndpoints(angleDeg: number) {
 // SVG attributes (camelCase for React JSX) — what to spread on the <path>.
 export function shapeStylingAttrs(shape: Shape, baseFillOpacity?: number) {
   const closed = shape.closed ?? true;
-  const fillColor = closed
-    ? (shape.fillKind === 'none'
-        ? 'none'
-        : shapeUsesGradient(shape) ? `url(#${shapeGradientId(shape)})` : shape.fill)
-    : 'none';
+  const fillColor = closed ? shapeFillRef(shape) : 'none';
   return {
     fill: fillColor,
     fillOpacity: closed ? baseFillOpacity : undefined,
@@ -115,6 +127,17 @@ export function shapeDefsMarkup(shape: Shape): FilterPiece[] {
         `<stop offset="0%" stop-color="${from}" />` +
         `<stop offset="100%" stop-color="${to}" />` +
         `</linearGradient>`,
+    });
+  }
+  if (shapeUsesImage(shape) && shape.fillImage) {
+    // objectBoundingBox + slice fits the image into the shape's bbox without
+    // distortion. Mirrors textPattern rendering.
+    pieces.push({
+      id: shapePatternId(shape),
+      markup:
+        `<pattern id="${shapePatternId(shape)}" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" width="1" height="1">` +
+        `<image href="${shape.fillImage.dataUrl}" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice" />` +
+        `</pattern>`,
     });
   }
   return pieces;

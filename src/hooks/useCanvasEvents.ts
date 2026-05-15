@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { snapToSquare, snapToIsometric, distance } from '../lib/geometry';
+import { readImageFile } from '../store/actions/image';
 import {
   rectanglePoints,
   ellipsePoints,
@@ -318,11 +319,54 @@ export function useCanvasEvents(
         return;
       }
 
+      if (activeToolRef.current === 'image') {
+        // Open a transient <input type="file"> so the user picks a file. The
+        // chosen click position is captured in closure scope and used as the
+        // image's top-left in world coordinates once the file is decoded.
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        input.addEventListener('change', async () => {
+          try {
+            const file = input.files?.[0];
+            if (!file) return;
+            const { dataUrl, width: nw, height: nh } = await readImageFile(file);
+            // Fit the image inside a sane on-canvas size. ~25% of the smaller
+            // viewport dimension keeps drops readable even for huge photos.
+            const vb = useAppStore.getState().viewBox;
+            const maxSide = Math.min(vb.w, vb.h) * 0.25;
+            const scale = Math.min(1, maxSide / Math.max(nw, nh));
+            const w = nw * scale;
+            const h = nh * scale;
+            const s = useAppStore.getState();
+            s.addImage({
+              id: crypto.randomUUID(),
+              x: world.x - w / 2,
+              y: world.y - h / 2,
+              width: w,
+              height: h,
+              dataUrl,
+              naturalWidth: nw,
+              naturalHeight: nh,
+            });
+            s.setActiveTool('select');
+          } finally {
+            input.remove();
+          }
+        });
+        input.click();
+        return;
+      }
+
       if (activeToolRef.current === 'select') {
-        // Click on bare canvas → clear both selections. Clicks that land on a
-        // shape or text never reach here because those layers stopPropagation.
+        // Click on bare canvas → clear all selections. Clicks that land on a
+        // shape, text, or image never reach here because those layers
+        // stopPropagation.
         useAppStore.getState().setSelectedTextId(null);
         useAppStore.getState().setSelectedShapeId(null);
+        useAppStore.getState().setSelectedImageId(null);
         return;
       }
 

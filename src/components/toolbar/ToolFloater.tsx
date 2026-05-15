@@ -4,6 +4,7 @@ import {
   Type,
   MousePointer2,
   Hand,
+  Image as ImageIcon,
   Square,
   Circle,
   Hexagon,
@@ -30,6 +31,7 @@ const TOOLS: ToolEntry[] = [
   { value: 'star',      Icon: Star,          label: 'Star' },
   { value: 'cutout',    Icon: Scissors,      label: 'Cutout' },
   { value: 'text',      Icon: Type,          label: 'Text' },
+  { value: 'image',     Icon: ImageIcon,     label: 'Image' },
 ];
 
 export function ToolFloater() {
@@ -41,7 +43,7 @@ export function ToolFloater() {
       <div
         className={[
           // Desktop: vertical strip on the left, centered
-          'md:absolute md:left-3 md:top-1/2 md:-translate-y-1/2 md:flex-col md:bottom-auto md:right-auto md:translate-x-0 md:translate-y-[-50%]',
+          'md:absolute md:left-3 md:top-1/2 md:-translate-y-1/2 md:flex-col md:bottom-auto md:right-auto md:translate-x-0',
           // Mobile: horizontal strip at the top center (HistoryBar owns the bottom)
           'absolute top-2 left-1/2 -translate-x-1/2 flex-row',
           'flex gap-1 rounded-lg p-1 border shadow-md max-w-[calc(100vw-1.5rem)] overflow-x-auto',

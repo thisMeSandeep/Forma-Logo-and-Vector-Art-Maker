@@ -10,14 +10,16 @@ type Scale = 1 | 2 | 3;
 export function ExportSection() {
   const shapes           = useAppStore((s) => s.shapes);
   const texts            = useAppStore((s) => s.texts);
+  const images           = useAppStore((s) => s.images);
   const selectedShapeId  = useAppStore((s) => s.selectedShapeId);
   const selectedTextId   = useAppStore((s) => s.selectedTextId);
+  const selectedImageId  = useAppStore((s) => s.selectedImageId);
 
   const [scope, setScope] = useState<Scope>('canvas');
   const [scale, setScale] = useState<Scale>(2);
 
-  const hasSelection = !!(selectedShapeId || selectedTextId);
-  const isEmpty = shapes.length === 0 && texts.length === 0;
+  const hasSelection = !!(selectedShapeId || selectedTextId || selectedImageId);
+  const isEmpty = shapes.length === 0 && texts.length === 0 && images.length === 0;
 
   // If the user picked Selection but later cleared the selection, fall back to canvas.
   const effectiveScope: Scope = scope === 'selection' && hasSelection ? 'selection' : 'canvas';
@@ -32,13 +34,23 @@ export function ExportSection() {
     if (effectiveScope === 'selection' && selectedTextId) {
       return texts.filter((t) => t.id === selectedTextId);
     }
-    if (effectiveScope === 'selection' && selectedShapeId) {
+    if (effectiveScope === 'selection' && (selectedShapeId || selectedImageId)) {
       return [];
     }
     return texts;
   }
+  function targetImages() {
+    if (effectiveScope === 'selection' && selectedImageId) {
+      return images.filter((img) => img.id === selectedImageId);
+    }
+    if (effectiveScope === 'selection' && (selectedShapeId || selectedTextId)) {
+      return [];
+    }
+    return images;
+  }
 
-  const targetIsEmpty = targetShapes().length === 0 && targetTexts().length === 0;
+  const targetIsEmpty =
+    targetShapes().length === 0 && targetTexts().length === 0 && targetImages().length === 0;
 
   return (
     <Section title="Export" icon={<Share2 size={11} />}>
@@ -76,14 +88,14 @@ export function ExportSection() {
           label="SVG"
           icon={<FileCode2 size={14} />}
           disabled={isEmpty || targetIsEmpty}
-          onClick={() => exportSVG(targetShapes(), targetTexts())}
+          onClick={() => exportSVG(targetShapes(), targetTexts(), targetImages())}
           title={isEmpty ? 'Draw something first' : `Download SVG (${effectiveScope})`}
         />
         <ExportButton
           label="PNG"
           icon={<Image size={14} />}
           disabled={isEmpty || targetIsEmpty}
-          onClick={() => exportPNG(targetShapes(), targetTexts(), scale)}
+          onClick={() => exportPNG(targetShapes(), targetTexts(), targetImages(), scale)}
           title={isEmpty ? 'Draw something first' : `Download PNG (${effectiveScope}, ${scale}×)`}
         />
       </div>

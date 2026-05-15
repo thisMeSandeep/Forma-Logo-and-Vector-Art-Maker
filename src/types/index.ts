@@ -27,7 +27,7 @@ export const IDENTITY_TRANSFORM: ShapeTransform = {
 };
 
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
-export type FillKind = 'none' | 'solid' | 'linear';
+export type FillKind = 'none' | 'solid' | 'linear' | 'image';
 
 export type ShapeShadow = {
   x: number;
@@ -72,8 +72,9 @@ export type Shape = {
   strokeStyle?: StrokeStyle;
   shadow?: ShapeShadow | null;  // null = explicitly disabled
   blur?: number;                // gaussian blur radius (0 = none)
-  fillKind?: FillKind;          // 'solid' (default) or 'linear' (uses fillGradient)
+  fillKind?: FillKind;          // 'solid' (default), 'linear' (uses fillGradient), 'image' (uses fillImage), or 'none'
   fillGradient?: LinearGradient;
+  fillImage?: ImageFill;
 };
 
 export type TextAnchor = 'start' | 'middle' | 'end';
@@ -135,6 +136,7 @@ export type Tool =
   | 'text'
   | 'select'
   | 'pan'
+  | 'image'
   | 'rectangle'
   | 'ellipse'
   | 'polygon'
@@ -151,15 +153,33 @@ export function isPrimitiveTool(tool: Tool): tool is PrimitiveTool {
 
 export type GridMode = 'square' | 'isometric' | 'dots';
 
+// Raster image dropped onto the canvas. Stored as a data URL so exports stay
+// self-contained — no broken refs once the SVG leaves the app.
+export type ImageItem = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  dataUrl: string;
+  // Natural (intrinsic) pixel size — used to recover aspect when resizing.
+  naturalWidth: number;
+  naturalHeight: number;
+  opacity?: number;          // 0..1
+  transform?: ShapeTransform;
+};
+
 // Snapshot used for undo/redo so text and shape edits both participate in history
 export type CanvasSnapshot = {
   shapes: Shape[];
   texts: TextItem[];
+  images: ImageItem[];
 };
 
 export type AppState = {
   shapes: Shape[];
   texts: TextItem[];
+  images: ImageItem[];
   activeTool: Tool;
   gridMode: GridMode;
   gridSize: number;
@@ -280,4 +300,18 @@ export type AppState = {
   flipText: (id: string, axis: 'horizontal' | 'vertical') => void;
   rotateText: (id: string, deltaDegrees: number) => void;
   reorderText: (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => void;
+
+  // Image actions — mirror the text/shape APIs.
+  selectedImageId: string | null;
+  addImage: (image: ImageItem) => void;
+  updateImage: (id: string, patch: Partial<ImageItem>) => void;
+  moveImage: (id: string, dx: number, dy: number) => void;
+  deleteImage: (id: string) => void;
+  setSelectedImageId: (id: string | null) => void;
+  duplicateImage: (id: string) => void;
+  flipImage: (id: string, axis: 'horizontal' | 'vertical') => void;
+  rotateImage: (id: string, deltaDegrees: number) => void;
+  reorderImage: (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => void;
+  setImageTransform: (id: string, patch: Partial<ShapeTransform>) => void;
+  resetImageTransform: (id: string) => void;
 };

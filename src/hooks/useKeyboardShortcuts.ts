@@ -35,13 +35,14 @@ export function useKeyboardShortcuts() {
         store.setEditingTextId(null);
         store.setSelectedTextId(null);
         store.setSelectedShapeId(null);
+        store.setSelectedImageId(null);
         store.setActiveTool('select');
         return;
       }
 
       const store = useAppStore.getState();
 
-      // Cmd/Ctrl+D — duplicate selected shape or text
+      // Cmd/Ctrl+D — duplicate selected shape, text, or image
       if (ctrl && e.key === 'd') {
         if (store.selectedShapeId) {
           e.preventDefault();
@@ -53,10 +54,15 @@ export function useKeyboardShortcuts() {
           store.duplicateText(store.selectedTextId);
           return;
         }
+        if (store.selectedImageId) {
+          e.preventDefault();
+          store.duplicateImage(store.selectedImageId);
+          return;
+        }
       }
 
-      // Z-order brackets — works for shapes and text
-      if (!ctrl && (store.selectedShapeId || store.selectedTextId)) {
+      // Z-order brackets — works for shapes, text, and images
+      if (!ctrl && (store.selectedShapeId || store.selectedTextId || store.selectedImageId)) {
         const dir = (forward: boolean): 'front' | 'back' | 'forward' | 'backward' => {
           if (e.shiftKey) return forward ? 'front' : 'back';
           return forward ? 'forward' : 'backward';
@@ -65,17 +71,19 @@ export function useKeyboardShortcuts() {
           e.preventDefault();
           if (store.selectedShapeId) store.reorderShape(store.selectedShapeId, dir(true));
           else if (store.selectedTextId) store.reorderText(store.selectedTextId, dir(true));
+          else if (store.selectedImageId) store.reorderImage(store.selectedImageId, dir(true));
           return;
         }
         if (e.key === '[') {
           e.preventDefault();
           if (store.selectedShapeId) store.reorderShape(store.selectedShapeId, dir(false));
           else if (store.selectedTextId) store.reorderText(store.selectedTextId, dir(false));
+          else if (store.selectedImageId) store.reorderImage(store.selectedImageId, dir(false));
           return;
         }
       }
 
-      // Delete — shape takes priority over text
+      // Delete — shape takes priority over text/image
       if (e.key === 'Backspace' || e.key === 'Delete') {
         if (store.selectedShapeId) {
           e.preventDefault();
@@ -85,6 +93,11 @@ export function useKeyboardShortcuts() {
         if (store.selectedTextId) {
           e.preventDefault();
           store.deleteText(store.selectedTextId);
+          return;
+        }
+        if (store.selectedImageId) {
+          e.preventDefault();
+          store.deleteImage(store.selectedImageId);
           return;
         }
       }

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import { Palette, Sparkles, CircleDashed } from 'lucide-react';
+import { Palette, Sparkles, CircleDashed, Upload } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Slider } from '../ui/slider';
@@ -140,9 +140,23 @@ export function StyleSection() {
     s.selectedShapeId ? s.shapes.find((sh) => sh.id === s.selectedShapeId) ?? null : null,
   );
   const updateShape = useAppStore((s) => s.updateShape);
+  const fillImageInputRef = useRef<HTMLInputElement>(null);
 
   function patch(p: Parameters<typeof updateShape>[1]) {
     if (selectedId) updateShape(selectedId, p);
+  }
+
+  async function onPickFillImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ''));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+    patch({ fillImage: { dataUrl } });
   }
 
   const fillKind = selected?.fillKind ?? 'solid';
@@ -152,24 +166,30 @@ export function StyleSection() {
 
   return (
     <Section title="Style" icon={<Palette size={11} />}>
-      {/* Fill kind toggle — only when shape selected, since gradient lives per-shape */}
+      {/* Fill kind dropdown — only when shape selected, since gradient/image live per-shape.
+          Using a select keeps four labels readable in the narrow sidebar row. */}
       {selected && (
         <PropertyRow label="Fill">
-          <div className="w-44">
-            <Segmented
-              value={fillKind}
-              options={[
-                { value: 'none',   label: 'None' },
-                { value: 'solid',  label: 'Solid' },
-                { value: 'linear', label: 'Gradient' },
-              ]}
-              onChange={(v) => {
-                if (v === 'linear') patch({ fillKind: 'linear', fillGradient: gradient });
-                else if (v === 'none') patch({ fillKind: 'none' });
-                else patch({ fillKind: 'solid' });
-              }}
-            />
-          </div>
+          <select
+            value={fillKind}
+            onChange={(e) => {
+              const v = e.target.value as typeof fillKind;
+              if (v === 'linear') patch({ fillKind: 'linear', fillGradient: gradient });
+              else if (v === 'image') {
+                patch({ fillKind: 'image' });
+                if (!selected.fillImage) requestAnimationFrame(() => fillImageInputRef.current?.click());
+              }
+              else if (v === 'none') patch({ fillKind: 'none' });
+              else patch({ fillKind: 'solid' });
+            }}
+            className="h-7 w-32 rounded border bg-foreground/[0.03] px-2 text-xs outline-none"
+            style={{ borderColor: 'var(--panel-border)' }}
+          >
+            <option value="none">None</option>
+            <option value="solid">Solid</option>
+            <option value="linear">Gradient</option>
+            <option value="image">Image</option>
+          </select>
         </PropertyRow>
       )}
 
@@ -206,6 +226,39 @@ export function StyleSection() {
             className="mt-2"
           />
         </>
+      )}
+
+      {selected && fillKind === 'image' && (
+        <PropertyRow label="Image">
+          <div className="flex items-center gap-1.5">
+            {selected.fillImage && (
+              <div
+                className="w-7 h-7 rounded border bg-center bg-cover"
+                style={{
+                  borderColor: 'var(--panel-border)',
+                  backgroundImage: `url(${selected.fillImage.dataUrl})`,
+                }}
+                title="Current image"
+              />
+            )}
+            <button
+              onClick={() => fillImageInputRef.current?.click()}
+              className="h-7 px-2 flex items-center gap-1 rounded border bg-foreground/[0.03] text-[11px] hover:bg-foreground/[0.06]"
+              style={{ borderColor: 'var(--panel-border)' }}
+              title={selected.fillImage ? 'Replace image' : 'Choose image'}
+            >
+              <Upload size={11} />
+              {selected.fillImage ? 'Replace' : 'Choose'}
+            </button>
+            <input
+              ref={fillImageInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={onPickFillImage}
+            />
+          </div>
+        </PropertyRow>
       )}
 
       <ColorRow label="Stroke" value={strokeColor} onChange={setStrokeColor} />

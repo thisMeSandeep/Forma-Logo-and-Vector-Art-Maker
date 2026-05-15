@@ -48,6 +48,12 @@ import {
   reorderedTexts,
   withTextRotationDelta,
 } from './actions/text';
+import {
+  duplicatedImage,
+  flippedImage,
+  reorderedImages,
+  withImageRotationDelta,
+} from './actions/image';
 import { zoomedViewBoxCenter } from './actions/viewport';
 import type {
   AppState,
@@ -73,8 +79,8 @@ export const useAppStore = create<AppState>()(
     (set, get) => {
       // Captures shapes + texts together so undo/redo treats both as one timeline
       function snapshot(): CanvasSnapshot {
-        const { shapes, texts } = get();
-        return { shapes, texts };
+        const { shapes, texts, images } = get();
+        return { shapes, texts, images };
       }
       function pushHistory() {
         const { history } = get();
@@ -84,6 +90,7 @@ export const useAppStore = create<AppState>()(
       return {
         shapes: [],
         texts: [],
+        images: [],
         activeTool: 'select' as Tool,
         gridMode: 'square' as GridMode,
         gridSize: GRID_SIZE_DEFAULT,
@@ -110,6 +117,7 @@ export const useAppStore = create<AppState>()(
         textStrokeStyle: TEXT_STROKE_STYLE_DEFAULT,
         selectedShapeId: null,
         selectedTextId: null,
+        selectedImageId: null,
         editingTextId: null,
         history: [] as CanvasSnapshot[],
         future: [] as CanvasSnapshot[],
@@ -156,9 +164,9 @@ export const useAppStore = create<AppState>()(
 
         // Fit all shapes + text into view with a small padding margin.
         zoomToFitContent: () => {
-          const { shapes, texts, initialViewBox } = get();
+          const { shapes, texts, images, initialViewBox } = get();
           if (!initialViewBox) return;
-          if (shapes.length === 0 && texts.length === 0) {
+          if (shapes.length === 0 && texts.length === 0 && images.length === 0) {
             set({ viewBox: initialViewBox });
             return;
           }
@@ -179,6 +187,12 @@ export const useAppStore = create<AppState>()(
             minY = Math.min(minY, y);
             maxX = Math.max(maxX, x + w);
             maxY = Math.max(maxY, y + t.fontSize * 1.4);
+          }
+          for (const img of images) {
+            minX = Math.min(minX, img.x);
+            minY = Math.min(minY, img.y);
+            maxX = Math.max(maxX, img.x + img.width);
+            maxY = Math.max(maxY, img.y + img.height);
           }
           if (!Number.isFinite(minX)) return;
           const pad = 40;
@@ -203,6 +217,7 @@ export const useAppStore = create<AppState>()(
             selectedTextId: tool === 'text' || tool === 'select' || tool === 'pan' ? s.selectedTextId : null,
             editingTextId:  tool === 'text' || tool === 'select' || tool === 'pan' ? s.editingTextId  : null,
             selectedShapeId: tool === 'select' || tool === 'pan' ? s.selectedShapeId : null,
+            selectedImageId: tool === 'select' || tool === 'pan' ? s.selectedImageId : null,
           })),
         setGridMode: (mode) => set({ gridMode: mode }),
         setGridSize: (size) => set({ gridSize: size }),
@@ -259,6 +274,7 @@ export const useAppStore = create<AppState>()(
           set({
             shapes: previous.shapes,
             texts: previous.texts,
+            images: previous.images ?? [],
             history: history.slice(0, -1),
             future: [snapshot(), ...future],
           });
@@ -271,6 +287,7 @@ export const useAppStore = create<AppState>()(
           set({
             shapes: next.shapes,
             texts: next.texts,
+            images: next.images ?? [],
             history: [...history, snapshot()],
             future: future.slice(1),
           });
@@ -278,8 +295,8 @@ export const useAppStore = create<AppState>()(
 
         resetCanvas: () =>
           set({
-            shapes: [], texts: [],
-            selectedShapeId: null, selectedTextId: null, editingTextId: null,
+            shapes: [], texts: [], images: [],
+            selectedShapeId: null, selectedTextId: null, selectedImageId: null, editingTextId: null,
             history: [], future: [],
             previewPoints: [], cursorPoint: null,
           }),
@@ -303,6 +320,7 @@ export const useAppStore = create<AppState>()(
               selectedShapeId: id,
               selectedTextId: id ? null : s.selectedTextId,
               editingTextId:  id ? null : s.editingTextId,
+              selectedImageId: id ? null : s.selectedImageId,
               fillColor:    shape?.fill         ?? s.fillColor,
               strokeColor:  shape?.stroke       ?? s.strokeColor,
               strokeWidth:  shape?.strokeWidth  ?? s.strokeWidth,
@@ -425,6 +443,7 @@ export const useAppStore = create<AppState>()(
             return {
               selectedTextId: id,
               selectedShapeId: id ? null : s.selectedShapeId,
+              selectedImageId: id ? null : s.selectedImageId,
               textFontFamily: text?.fontFamily ?? s.textFontFamily,
               textFontSize:   text?.fontSize   ?? s.textFontSize,
               textFontWeight: text?.fontWeight ?? s.textFontWeight,
@@ -524,6 +543,94 @@ export const useAppStore = create<AppState>()(
             history: pushHistory(),
             future: [],
           })),
+
+        // Image actions — same pattern as shape/text.
+        addImage: (image) =>
+          set((s) => ({
+            images: [...s.images, image],
+            selectedImageId: image.id,
+            selectedShapeId: null,
+            selectedTextId: null,
+            editingTextId: null,
+            history: pushHistory(),
+            future: [],
+          })),
+
+        updateImage: (id, patch) =>
+          set((s) => ({ images: s.images.map((img) => (img.id === id ? { ...img, ...patch } : img)) })),
+
+        moveImage: (id, dx, dy) =>
+          set((s) => ({
+            images: s.images.map((img) =>
+              img.id === id ? { ...img, x: img.x + dx, y: img.y + dy } : img,
+            ),
+          })),
+
+        deleteImage: (id) =>
+          set((s) => ({
+            images: s.images.filter((img) => img.id !== id),
+            selectedImageId: s.selectedImageId === id ? null : s.selectedImageId,
+            history: pushHistory(),
+            future: [],
+          })),
+
+        setSelectedImageId: (id) =>
+          set((s) => ({
+            selectedImageId: id,
+            selectedShapeId: id ? null : s.selectedShapeId,
+            selectedTextId: id ? null : s.selectedTextId,
+            editingTextId: id ? null : s.editingTextId,
+          })),
+
+        duplicateImage: (id) => {
+          const { images, gridSize } = get();
+          const source = images.find((img) => img.id === id);
+          if (!source) return;
+          const copy = duplicatedImage(source, gridSize);
+          set({
+            images: [...images, copy],
+            selectedImageId: copy.id,
+            history: pushHistory(),
+            future: [],
+          });
+        },
+
+        flipImage: (id, axis) =>
+          set((s) => ({
+            images: s.images.map((img) => (img.id === id ? flippedImage(img, axis) : img)),
+            history: pushHistory(),
+            future: [],
+          })),
+
+        rotateImage: (id, deltaDegrees) =>
+          set((s) => ({
+            images: s.images.map((img) => (img.id === id ? withImageRotationDelta(img, deltaDegrees) : img)),
+            history: pushHistory(),
+            future: [],
+          })),
+
+        reorderImage: (id, direction) =>
+          set((s) => ({
+            images: reorderedImages(s.images, id, direction),
+            history: pushHistory(),
+            future: [],
+          })),
+
+        setImageTransform: (id, patch) =>
+          set((s) => ({
+            images: s.images.map((img) =>
+              img.id === id
+                ? { ...img, transform: { ...IDENTITY_TRANSFORM, ...img.transform, ...patch } }
+                : img,
+            ),
+          })),
+
+        resetImageTransform: (id) =>
+          set((s) => ({
+            images: s.images.map((img) => (img.id === id ? { ...img, transform: undefined } : img)),
+            history: pushHistory(),
+            future: [],
+          })),
       } satisfies AppState;
     },
     {
@@ -531,6 +638,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         shapes:         state.shapes,
         texts:          state.texts,
+        images:         state.images,
         fillColor:      state.fillColor,
         strokeColor:    state.strokeColor,
         strokeWidth:    state.strokeWidth,

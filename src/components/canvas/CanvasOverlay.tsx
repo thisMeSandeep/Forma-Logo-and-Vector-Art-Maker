@@ -19,7 +19,8 @@ export function CanvasOverlay() {
   const setZoomPercent = useAppStore((s) => s.setZoomPercent);
   const zoomToFitContent = useAppStore((s) => s.zoomToFitContent);
 
-  const itemCount = shapes.length + texts.length;
+  const images = useAppStore((s) => s.images);
+  const itemCount = shapes.length + texts.length + images.length;
   const isEmpty = itemCount === 0 && previewPoints.length === 0;
   const zoom = initialViewBox ? initialViewBox.w / viewBox.w : 1;
   const zoomPct = Math.round(zoom * 100);

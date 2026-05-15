@@ -27,6 +27,7 @@ import { useAppStore } from '../../store/useAppStore';
 export function CanvasContextMenu({ children }: { children: React.ReactNode }) {
   const selectedShapeId     = useAppStore((s) => s.selectedShapeId);
   const selectedTextId      = useAppStore((s) => s.selectedTextId);
+  const selectedImageId     = useAppStore((s) => s.selectedImageId);
   const duplicateShape      = useAppStore((s) => s.duplicateShape);
   const flipShape           = useAppStore((s) => s.flipShape);
   const reorderShape        = useAppStore((s) => s.reorderShape);
@@ -39,32 +40,44 @@ export function CanvasContextMenu({ children }: { children: React.ReactNode }) {
   const deleteText          = useAppStore((s) => s.deleteText);
   const rotateText          = useAppStore((s) => s.rotateText);
   const resetTextTransform  = useAppStore((s) => s.resetTextTransform);
+  const duplicateImage      = useAppStore((s) => s.duplicateImage);
+  const flipImage           = useAppStore((s) => s.flipImage);
+  const reorderImage        = useAppStore((s) => s.reorderImage);
+  const deleteImage         = useAppStore((s) => s.deleteImage);
+  const rotateImage         = useAppStore((s) => s.rotateImage);
+  const resetImageTransform = useAppStore((s) => s.resetImageTransform);
 
-  const hasSelection = selectedShapeId != null || selectedTextId != null;
+  const hasSelection = selectedShapeId != null || selectedTextId != null || selectedImageId != null;
 
   function onDuplicate() {
     if (selectedShapeId) duplicateShape(selectedShapeId);
     else if (selectedTextId) duplicateText(selectedTextId);
+    else if (selectedImageId) duplicateImage(selectedImageId);
   }
   function onFlip(axis: 'horizontal' | 'vertical') {
     if (selectedShapeId) flipShape(selectedShapeId, axis);
     else if (selectedTextId) flipText(selectedTextId, axis);
+    else if (selectedImageId) flipImage(selectedImageId, axis);
   }
   function onRotate(delta: number) {
     if (selectedShapeId) rotateShape(selectedShapeId, delta);
     else if (selectedTextId) rotateText(selectedTextId, delta);
+    else if (selectedImageId) rotateImage(selectedImageId, delta);
   }
   function onResetTransform() {
     if (selectedShapeId) resetShapeTransform(selectedShapeId);
     else if (selectedTextId) resetTextTransform(selectedTextId);
+    else if (selectedImageId) resetImageTransform(selectedImageId);
   }
   function onReorder(direction: 'front' | 'back' | 'forward' | 'backward') {
     if (selectedShapeId) reorderShape(selectedShapeId, direction);
     else if (selectedTextId) reorderText(selectedTextId, direction);
+    else if (selectedImageId) reorderImage(selectedImageId, direction);
   }
   function onDelete() {
     if (selectedShapeId) deleteShape(selectedShapeId);
     else if (selectedTextId) deleteText(selectedTextId);
+    else if (selectedImageId) deleteImage(selectedImageId);
   }
 
   return (

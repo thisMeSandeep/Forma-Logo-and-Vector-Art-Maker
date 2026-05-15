@@ -1,13 +1,13 @@
-import type { Shape, TextItem } from '../types';
+import type { ImageItem, Shape, TextItem } from '../types';
+import { IDENTITY_TRANSFORM } from '../types';
 import { EXPORT_PADDING, EXPORT_PNG_SCALE } from '../config/constants';
 import { roundedRingToD, openRingToD } from './svgPath';
 import { bakedShapeRings } from './geometry';
 import {
   shapeDefsMarkup,
+  shapeFillRef,
   shapeFilterId,
-  shapeGradientId,
   shapeNeedsFilter,
-  shapeUsesGradient,
   strokeDashArray,
   strokeLinecap,
 } from './shapeStyle';
@@ -31,10 +31,27 @@ function escapeXml(value: string) {
     .replace(/>/g, '&gt;');
 }
 
+function imageTransformStr(image: ImageItem): string | undefined {
+  const t = image.transform ?? IDENTITY_TRANSFORM;
+  const isIdentity =
+    t.rotation === 0 && t.scaleX === 1 && t.scaleY === 1 && t.skewX === 0 && t.skewY === 0;
+  if (isIdentity) return undefined;
+  const cx = image.x + image.width / 2;
+  const cy = image.y + image.height / 2;
+  const parts: string[] = [`translate(${cx} ${cy})`];
+  if (t.rotation) parts.push(`rotate(${t.rotation})`);
+  if (t.scaleX !== 1 || t.scaleY !== 1) parts.push(`scale(${t.scaleX} ${t.scaleY})`);
+  if (t.skewX) parts.push(`skewX(${t.skewX})`);
+  if (t.skewY) parts.push(`skewY(${t.skewY})`);
+  parts.push(`translate(${-cx} ${-cy})`);
+  return parts.join(' ');
+}
+
 // Computes the axis-aligned bounding box over all canvas content
 function getBoundingBox(
   shapes: Shape[],
   texts: TextItem[],
+  images: ImageItem[] = [],
 ): { x: number; y: number; w: number; h: number } {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const shape of shapes) {
@@ -46,6 +63,13 @@ function getBoundingBox(
         if (pt.y > maxY) maxY = pt.y;
       }
     }
+  }
+
+  for (const image of images) {
+    if (image.x < minX) minX = image.x;
+    if (image.y < minY) minY = image.y;
+    if (image.x + image.width  > maxX) maxX = image.x + image.width;
+    if (image.y + image.height > maxY) maxY = image.y + image.height;
   }
 
   for (const text of texts) {
@@ -82,8 +106,12 @@ function getBoundingBox(
 // Builds a standalone SVG string containing only the shapes (no grid).
 // Async because Google fonts referenced by texts are inlined as @font-face
 // blocks with base64-encoded woff2 payloads, which requires network fetches.
-async function buildShapesSVG(shapes: Shape[], texts: TextItem[]): Promise<string> {
-  const { x, y, w, h } = getBoundingBox(shapes, texts);
+async function buildShapesSVG(
+  shapes: Shape[],
+  texts: TextItem[],
+  images: ImageItem[] = [],
+): Promise<string> {
+  const { x, y, w, h } = getBoundingBox(shapes, texts, images);
 
   // Collect per-shape filter/gradient defs alongside the shared arrowhead marker.
   const hasArrow = shapes.some((s) => s.arrowEnd);
@@ -112,12 +140,7 @@ async function buildShapesSVG(shapes: Shape[], texts: TextItem[]): Promise<strin
         ? baked.map((ring) => roundedRingToD(ring, r)).join(' ')
         : openRingToD(baked[0]);
 
-      const useGradient = closed && shapeUsesGradient(shape);
-      const fillValue = closed
-        ? (shape.fillKind === 'none'
-            ? 'none'
-            : useGradient ? `url(#${shapeGradientId(shape)})` : shape.fill)
-        : 'none';
+      const fillValue = closed ? shapeFillRef(shape) : 'none';
       const fillAttr = `fill="${fillValue}"`;
 
       const markerAttr = shape.arrowEnd ? ` marker-end="url(#arrowhead)"` : '';
@@ -160,9 +183,19 @@ async function buildShapesSVG(shapes: Shape[], texts: TextItem[]): Promise<strin
     })
     .join('\n');
 
+  const imageMarkup = images
+    .map((image) => {
+      const transformStr = imageTransformStr(image);
+      const transformAttr = transformStr ? ` transform="${transformStr}"` : '';
+      const opacityAttr = image.opacity != null && image.opacity !== 1 ? ` opacity="${image.opacity}"` : '';
+      return `  <image x="${image.x}" y="${image.y}" width="${image.width}" height="${image.height}" href="${image.dataUrl}" preserveAspectRatio="none"${transformAttr}${opacityAttr} />`;
+    })
+    .join('\n');
+
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${w}" height="${h}">`,
     defsBlock,
+    imageMarkup,
     pathMarkup,
     textMarkup,
     `</svg>`,
@@ -176,19 +209,19 @@ function triggerDownload(url: string, filename: string): void {
   a.click();
 }
 
-export async function exportSVG(shapes: Shape[], texts: TextItem[]): Promise<void> {
-  if (shapes.length === 0 && texts.length === 0) return;
-  const svgString = await buildShapesSVG(shapes, texts);
+export async function exportSVG(shapes: Shape[], texts: TextItem[], images: ImageItem[] = []): Promise<void> {
+  if (shapes.length === 0 && texts.length === 0 && images.length === 0) return;
+  const svgString = await buildShapesSVG(shapes, texts, images);
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
   triggerDownload(url, 'forma-export.svg');
   URL.revokeObjectURL(url);
 }
 
-export async function exportPNG(shapes: Shape[], texts: TextItem[], scale: number = EXPORT_PNG_SCALE): Promise<void> {
-  if (shapes.length === 0 && texts.length === 0) return;
-  const svgString = await buildShapesSVG(shapes, texts);
-  const { w, h } = getBoundingBox(shapes, texts);
+export async function exportPNG(shapes: Shape[], texts: TextItem[], images: ImageItem[] = [], scale: number = EXPORT_PNG_SCALE): Promise<void> {
+  if (shapes.length === 0 && texts.length === 0 && images.length === 0) return;
+  const svgString = await buildShapesSVG(shapes, texts, images);
+  const { w, h } = getBoundingBox(shapes, texts, images);
 
   const blob = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);

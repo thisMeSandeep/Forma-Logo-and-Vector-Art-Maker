@@ -7,6 +7,7 @@ import { ShapeLayer } from './ShapeLayer';
 import { SelectionHandles } from './SelectionHandles';
 import { TextSelectionHandles } from './TextSelectionHandles';
 import { TextLayer } from './TextLayer';
+import { ImageLayer } from './ImageLayer';
 import { PreviewLayer } from './PreviewLayer';
 import { GuidesLayer } from './GuidesLayer';
 import { CROSSHAIR_ARM } from '../../config/constants';
@@ -38,6 +39,7 @@ export function DrawingCanvas() {
       style={{ background: canvasBackground, cursor, touchAction: 'none' }}
     >
       <GridLayer />
+      <ImageLayer />
       <ShapeLayer />
       <TextLayer />
       <PreviewLayer />
