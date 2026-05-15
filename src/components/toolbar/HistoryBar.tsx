@@ -1,4 +1,4 @@
-import { Undo2, Redo2, RotateCcw, AlertTriangle, Trash2 } from 'lucide-react';
+import { Undo2, Redo2, RotateCcw, AlertTriangle, Trash2, Keyboard } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { Button } from '../ui/button';
 import {
@@ -9,6 +9,14 @@ import {
   AlertDialogFooter,
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../ui/dialog';
 
 export function HistoryBar() {
   const undo = useAppStore((s) => s.undo);
@@ -48,6 +56,57 @@ export function HistoryBar() {
         >
           <Redo2 size={14} />
         </Button>
+
+        <div
+          className="w-px h-4 mx-0.5"
+          style={{ background: 'var(--panel-border)' }}
+        />
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon-sm" title="Keyboard shortcuts">
+              <Keyboard size={14} />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-sm">Keyboard shortcuts</DialogTitle>
+              <DialogDescription className="text-xs">
+                Modifier keys are <Kbd>⌘</Kbd> on Mac, <Kbd>Ctrl</Kbd> on Windows/Linux.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-2 space-y-5">
+              <ShortcutGroup title="History">
+                <Shortcut label="Undo"        keys={['⌘', 'Z']} />
+                <Shortcut label="Redo"        keys={['⌘', '⇧', 'Z']} />
+                <Shortcut label="Redo (alt)" keys={['⌘', 'Y']} />
+              </ShortcutGroup>
+
+              <ShortcutGroup title="Selection">
+                <Shortcut label="Duplicate"        keys={['⌘', 'D']} />
+                <Shortcut label="Delete"           keys={['Delete']} />
+                <Shortcut label="Clear selection"  keys={['Esc']} />
+                <Shortcut label="Nudge 1px"        keys={['←↑↓→']} />
+                <Shortcut label="Nudge by grid"    keys={['⇧', '←↑↓→']} />
+                <Shortcut label="Select from any tool" keys={['⌘', 'Click']} />
+              </ShortcutGroup>
+
+              <ShortcutGroup title="Layer order">
+                <Shortcut label="Bring forward"  keys={[']']} />
+                <Shortcut label="Send backward" keys={['[']} />
+                <Shortcut label="Bring to front" keys={['⇧', ']']} />
+                <Shortcut label="Send to back"   keys={['⇧', '[']} />
+              </ShortcutGroup>
+
+              <ShortcutGroup title="Canvas">
+                <Shortcut label="Pan (hold)"        keys={['Space', '+', 'Drag']} />
+                <Shortcut label="Constrain (while drawing)" keys={['⇧', 'Drag']} />
+                <Shortcut label="Edit text"         keys={['Double-click']} />
+              </ShortcutGroup>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div
           className="w-px h-4 mx-0.5"
@@ -133,6 +192,46 @@ function StatRow({
     <div className="flex items-center justify-between px-3 py-2 text-xs" style={style}>
       <span className="text-muted-foreground">{label}</span>
       <span className="font-mono tabular-nums font-medium">{value}</span>
+    </div>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd
+      className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1 rounded border text-[10px] font-mono font-medium bg-foreground/[0.04]"
+      style={{ borderColor: 'var(--panel-border)' }}
+    >
+      {children}
+    </kbd>
+  );
+}
+
+function ShortcutGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70 mb-2">
+        {title}
+      </h3>
+      <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+// Each entry in `keys` is shown as a separate <Kbd>, except the literal '+'
+// which is rendered as a plain "+" separator (so e.g. "Space + Drag" reads as
+// two keys joined by a plus rather than three boxed tokens).
+function Shortcut({ label, keys }: { label: string; keys: string[] }) {
+  return (
+    <div className="flex items-center justify-between text-xs">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="flex items-center gap-1">
+        {keys.map((k, i) =>
+          k === '+'
+            ? <span key={i} className="text-muted-foreground/60 text-[10px]">+</span>
+            : <Kbd key={i}>{k}</Kbd>,
+        )}
+      </span>
     </div>
   );
 }
