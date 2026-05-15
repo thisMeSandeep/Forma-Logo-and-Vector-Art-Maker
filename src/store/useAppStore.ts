@@ -14,6 +14,12 @@ import {
   TEXT_FONT_WEIGHT_DEFAULT,
   TEXT_FILL_DEFAULT,
   TEXT_ANCHOR_DEFAULT,
+  TEXT_ITALIC_DEFAULT,
+  TEXT_DECORATION_DEFAULT,
+  TEXT_LETTER_SPACING_DEFAULT,
+  TEXT_LINE_HEIGHT_DEFAULT,
+  TEXT_BASELINE_DEFAULT,
+  TEXT_OPACITY_DEFAULT,
   POLYGON_SIDES_DEFAULT,
   STAR_POINTS_DEFAULT,
   STAR_INNER_RATIO_DEFAULT,
@@ -41,9 +47,13 @@ import type {
   Point,
   ViewBox,
   TextAnchor,
+  TextDecoration,
+  TextBaseline,
   FontWeight,
   CanvasSnapshot,
+  ShapeTransform,
 } from '../types';
+import { IDENTITY_TRANSFORM } from '../types';
 
 // Placeholder until useViewBox sets the real value on mount
 const DEFAULT_VIEWBOX: ViewBox = { x: 0, y: 0, w: 1200, h: 800 };
@@ -79,6 +89,12 @@ export const useAppStore = create<AppState>()(
         textFontWeight: TEXT_FONT_WEIGHT_DEFAULT,
         textFill: TEXT_FILL_DEFAULT,
         textAnchor: TEXT_ANCHOR_DEFAULT,
+        textItalic: TEXT_ITALIC_DEFAULT,
+        textDecoration: TEXT_DECORATION_DEFAULT,
+        textLetterSpacing: TEXT_LETTER_SPACING_DEFAULT,
+        textLineHeight: TEXT_LINE_HEIGHT_DEFAULT,
+        textBaseline: TEXT_BASELINE_DEFAULT,
+        textOpacity: TEXT_OPACITY_DEFAULT,
         selectedShapeId: null,
         selectedTextId: null,
         editingTextId: null,
@@ -360,6 +376,12 @@ export const useAppStore = create<AppState>()(
             textFontWeight: text.fontWeight,
             textFill: text.fill,
             textAnchor: text.anchor,
+            textItalic:        text.italic        ?? s.textItalic,
+            textDecoration:    text.decoration    ?? s.textDecoration,
+            textLetterSpacing: text.letterSpacing ?? s.textLetterSpacing,
+            textLineHeight:    text.lineHeight    ?? s.textLineHeight,
+            textBaseline:      text.baseline      ?? s.textBaseline,
+            textOpacity:       text.opacity       ?? s.textOpacity,
             history: pushHistory(),
             future: [],
           })),
@@ -390,6 +412,12 @@ export const useAppStore = create<AppState>()(
               textFontWeight: text?.fontWeight ?? s.textFontWeight,
               textFill:       text?.fill       ?? s.textFill,
               textAnchor:     text?.anchor     ?? s.textAnchor,
+              textItalic:        text?.italic        ?? s.textItalic,
+              textDecoration:    text?.decoration    ?? s.textDecoration,
+              textLetterSpacing: text?.letterSpacing ?? s.textLetterSpacing,
+              textLineHeight:    text?.lineHeight    ?? s.textLineHeight,
+              textBaseline:      text?.baseline      ?? s.textBaseline,
+              textOpacity:       text?.opacity       ?? s.textOpacity,
             };
           }),
 
@@ -406,6 +434,34 @@ export const useAppStore = create<AppState>()(
           set((s) => ({ textFill: c, texts: patchSelectedText(s.texts, s.selectedTextId, 'fill', c) })),
         setTextAnchor: (a: TextAnchor) =>
           set((s) => ({ textAnchor: a, texts: patchSelectedText(s.texts, s.selectedTextId, 'anchor', a) })),
+        setTextItalic: (v: boolean) =>
+          set((s) => ({ textItalic: v, texts: patchSelectedText(s.texts, s.selectedTextId, 'italic', v) })),
+        setTextDecoration: (d: TextDecoration) =>
+          set((s) => ({ textDecoration: d, texts: patchSelectedText(s.texts, s.selectedTextId, 'decoration', d) })),
+        setTextLetterSpacing: (px: number) =>
+          set((s) => ({ textLetterSpacing: px, texts: patchSelectedText(s.texts, s.selectedTextId, 'letterSpacing', px) })),
+        setTextLineHeight: (m: number) =>
+          set((s) => ({ textLineHeight: m, texts: patchSelectedText(s.texts, s.selectedTextId, 'lineHeight', m) })),
+        setTextBaseline: (b: TextBaseline) =>
+          set((s) => ({ textBaseline: b, texts: patchSelectedText(s.texts, s.selectedTextId, 'baseline', b) })),
+        setTextOpacity: (o: number) =>
+          set((s) => ({ textOpacity: o, texts: patchSelectedText(s.texts, s.selectedTextId, 'opacity', o) })),
+
+        // Live transform during drag (no history). Caller should commitHistory on pointerup.
+        setTextTransform: (id: string, patch: Partial<ShapeTransform>) =>
+          set((s) => ({
+            texts: s.texts.map((t) =>
+              t.id === id
+                ? { ...t, transform: { ...IDENTITY_TRANSFORM, ...t.transform, ...patch } }
+                : t,
+            ),
+          })),
+        resetTextTransform: (id: string) =>
+          set((s) => ({
+            texts: s.texts.map((t) => (t.id === id ? { ...t, transform: undefined } : t)),
+            history: pushHistory(),
+            future: [],
+          })),
       } satisfies AppState;
     },
     {
@@ -419,11 +475,17 @@ export const useAppStore = create<AppState>()(
         cornerRadius:   state.cornerRadius,
         opacity:        state.opacity,
         strokeStyle:    state.strokeStyle,
-        textFontFamily: state.textFontFamily,
-        textFontSize:   state.textFontSize,
-        textFontWeight: state.textFontWeight,
-        textFill:       state.textFill,
-        textAnchor:     state.textAnchor,
+        textFontFamily:    state.textFontFamily,
+        textFontSize:      state.textFontSize,
+        textFontWeight:    state.textFontWeight,
+        textFill:          state.textFill,
+        textAnchor:        state.textAnchor,
+        textItalic:        state.textItalic,
+        textDecoration:    state.textDecoration,
+        textLetterSpacing: state.textLetterSpacing,
+        textLineHeight:    state.textLineHeight,
+        textBaseline:      state.textBaseline,
+        textOpacity:       state.textOpacity,
         gridSize:       state.gridSize,
         gridMode:       state.gridMode,
         showGrid:       state.showGrid,

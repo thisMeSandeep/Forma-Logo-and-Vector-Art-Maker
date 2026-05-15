@@ -86,6 +86,12 @@ export function useCanvasEvents(
   const textFontWeightRef = useRef(useAppStore.getState().textFontWeight);
   const textFillRef = useRef(useAppStore.getState().textFill);
   const textAnchorRef = useRef(useAppStore.getState().textAnchor);
+  const textItalicRef = useRef(useAppStore.getState().textItalic);
+  const textDecorationRef = useRef(useAppStore.getState().textDecoration);
+  const textLetterSpacingRef = useRef(useAppStore.getState().textLetterSpacing);
+  const textLineHeightRef = useRef(useAppStore.getState().textLineHeight);
+  const textBaselineRef = useRef(useAppStore.getState().textBaseline);
+  const textOpacityRef = useRef(useAppStore.getState().textOpacity);
   const activeToolRef  = useRef(useAppStore.getState().activeTool);
 
   // Refs for stable callbacks (these don't change identity after mount)
@@ -121,6 +127,12 @@ export function useCanvasEvents(
       textFontWeightRef.current = s.textFontWeight;
       textFillRef.current = s.textFill;
       textAnchorRef.current = s.textAnchor;
+      textItalicRef.current = s.textItalic;
+      textDecorationRef.current = s.textDecoration;
+      textLetterSpacingRef.current = s.textLetterSpacing;
+      textLineHeightRef.current = s.textLineHeight;
+      textBaselineRef.current = s.textBaseline;
+      textOpacityRef.current = s.textOpacity;
       activeToolRef.current  = s.activeTool;
     }),
   []);
@@ -282,6 +294,12 @@ export function useCanvasEvents(
           fontWeight: textFontWeightRef.current,
           fill: textFillRef.current,
           anchor: textAnchorRef.current,
+          italic: textItalicRef.current,
+          decoration: textDecorationRef.current,
+          letterSpacing: textLetterSpacingRef.current,
+          lineHeight: textLineHeightRef.current,
+          baseline: textBaselineRef.current,
+          opacity: textOpacityRef.current,
         };
         const s = useAppStore.getState();
         s.addText(text);

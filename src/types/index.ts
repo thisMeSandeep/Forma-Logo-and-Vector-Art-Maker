@@ -42,6 +42,17 @@ export type LinearGradient = {
   angle: number;  // degrees, 0 = left→right, 90 = top→bottom
 };
 
+export type RadialGradient = {
+  from: string;  // center color
+  to: string;    // edge color
+};
+
+// Image fills are stored as data URLs so exports stay self-contained
+// (no broken external image refs once the SVG leaves the app).
+export type ImageFill = {
+  dataUrl: string;
+};
+
 export type Shape = {
   id: string;
   points: Point[][];  // first ring = outer boundary; subsequent rings = holes
@@ -66,7 +77,12 @@ export type Shape = {
 };
 
 export type TextAnchor = 'start' | 'middle' | 'end';
-export type FontWeight = 400 | 500 | 600 | 700;
+export type FontWeight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+export type TextDecoration = 'none' | 'underline' | 'line-through';
+// Maps to SVG dominant-baseline. 'alphabetic' is the default baseline.
+export type TextBaseline = 'hanging' | 'middle' | 'alphabetic' | 'ideographic';
+// Text-side fill kinds. Image is paint-as-pattern (the image clips to glyph shapes).
+export type TextFillKind = 'solid' | 'linear' | 'radial' | 'image';
 
 export type TextItem = {
   id: string;
@@ -78,6 +94,20 @@ export type TextItem = {
   fontWeight: FontWeight;
   fill: string;
   anchor: TextAnchor;
+  // Typography extensions. Undefined → use sensible defaults so existing data still loads.
+  italic?: boolean;
+  decoration?: TextDecoration;
+  letterSpacing?: number;  // px, 0 = default
+  lineHeight?: number;     // multiplier of fontSize, default 1.2
+  baseline?: TextBaseline;
+  // Fill extensions — undefined → solid (uses `fill`).
+  fillKind?: TextFillKind;
+  fillGradient?: LinearGradient;
+  fillRadial?: RadialGradient;
+  fillImage?: ImageFill;
+  opacity?: number;  // 0..1
+  // Free-form transform applied around the local bbox center, mirrors Shape.transform.
+  transform?: ShapeTransform;
 };
 
 export type Tool =
@@ -127,6 +157,12 @@ export type AppState = {
   textFontWeight: FontWeight;
   textFill: string;
   textAnchor: TextAnchor;
+  textItalic: boolean;
+  textDecoration: TextDecoration;
+  textLetterSpacing: number;
+  textLineHeight: number;
+  textBaseline: TextBaseline;
+  textOpacity: number;
   selectedShapeId: string | null;
   selectedTextId: string | null;
   editingTextId: string | null;
@@ -206,4 +242,12 @@ export type AppState = {
   setTextFontWeight: (w: FontWeight) => void;
   setTextFill: (c: string) => void;
   setTextAnchor: (a: TextAnchor) => void;
+  setTextItalic: (v: boolean) => void;
+  setTextDecoration: (d: TextDecoration) => void;
+  setTextLetterSpacing: (px: number) => void;
+  setTextLineHeight: (m: number) => void;
+  setTextBaseline: (b: TextBaseline) => void;
+  setTextOpacity: (o: number) => void;
+  setTextTransform: (id: string, patch: Partial<ShapeTransform>) => void;
+  resetTextTransform: (id: string) => void;
 };

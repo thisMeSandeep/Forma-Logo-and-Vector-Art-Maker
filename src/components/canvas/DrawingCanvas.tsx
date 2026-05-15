@@ -5,6 +5,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { GridLayer } from './GridLayer';
 import { ShapeLayer } from './ShapeLayer';
 import { SelectionHandles } from './SelectionHandles';
+import { TextSelectionHandles } from './TextSelectionHandles';
 import { TextLayer } from './TextLayer';
 import { PreviewLayer } from './PreviewLayer';
 import { GuidesLayer } from './GuidesLayer';
@@ -42,6 +43,7 @@ export function DrawingCanvas() {
       <PreviewLayer />
       <GuidesLayer />
       <SelectionHandles />
+      <TextSelectionHandles />
       {/* Crosshair: translate to world point, scale so arms stay pixel-sized at any zoom */}
       <g
         ref={crosshairRef}

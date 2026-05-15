@@ -11,16 +11,9 @@ import {
   strokeDashArray,
   strokeLinecap,
 } from './shapeStyle';
-
-function textWidth(text: TextItem) {
-  return Math.max(text.fontSize * 2, text.content.length * text.fontSize * 0.62);
-}
-
-function textAnchorOffset(text: TextItem, width: number) {
-  if (text.anchor === 'middle') return -width / 2;
-  if (text.anchor === 'end') return -width;
-  return 0;
-}
+import { textDefsMarkup, textFillRef } from './textStyle';
+import { textBBox, textMatrix, textTransformString } from './textGeometry';
+import { applyShapeMatrix } from './geometry';
 
 function escapeXml(value: string) {
   return value
@@ -48,13 +41,22 @@ function getBoundingBox(
   }
 
   for (const text of texts) {
-    const width = textWidth(text);
-    const x = text.x + textAnchorOffset(text, width);
-    const y = text.y - text.fontSize;
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x + width);
-    maxY = Math.max(maxY, y + text.fontSize * 1.4);
+    // Project the four corners of the local text bbox through its transform
+    // so rotated/scaled text contributes its actual visual bounds.
+    const b = textBBox(text);
+    const m = textMatrix(text);
+    const corners = [
+      { x: b.x,         y: b.y },
+      { x: b.x + b.w,   y: b.y },
+      { x: b.x + b.w,   y: b.y + b.h },
+      { x: b.x,         y: b.y + b.h },
+    ].map((p) => applyShapeMatrix(m, p));
+    for (const p of corners) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
   }
 
   if (!Number.isFinite(minX)) {
@@ -78,7 +80,8 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
   const arrowMarker =
     '<marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke" /></marker>';
   const shapeDefs = shapes.flatMap((sh) => shapeDefsMarkup(sh)).map((p) => p.markup).join('');
-  const defsInner = (hasArrow ? arrowMarker : '') + shapeDefs;
+  const textDefs  = texts.flatMap((t)  => textDefsMarkup(t)).map((p) => p.markup).join('');
+  const defsInner = (hasArrow ? arrowMarker : '') + shapeDefs + textDefs;
   const defsBlock = defsInner ? `  <defs>${defsInner}</defs>` : '';
 
   const pathMarkup = shapes
@@ -111,9 +114,24 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
     .join('\n');
 
   const textMarkup = texts
-    .map((text) =>
-      `  <text x="${text.x}" y="${text.y}" text-anchor="${text.anchor}" font-family="${escapeXml(text.fontFamily)}" font-size="${text.fontSize}" font-weight="${text.fontWeight}" fill="${escapeXml(text.fill)}">${escapeXml(text.content)}</text>`,
-    )
+    .map((text) => {
+      const italicAttr     = text.italic ? ` font-style="italic"` : '';
+      const decorationAttr = text.decoration && text.decoration !== 'none'
+        ? ` text-decoration="${text.decoration}"` : '';
+      const trackingAttr   = text.letterSpacing
+        ? ` letter-spacing="${text.letterSpacing}"` : '';
+      const baselineAttr   = text.baseline && text.baseline !== 'alphabetic'
+        ? ` dominant-baseline="${text.baseline}"` : '';
+      const opacityAttr    = text.opacity != null && text.opacity !== 1
+        ? ` opacity="${text.opacity}"` : '';
+      const fillVal = textFillRef(text);
+      // Gradients/patterns return `url(#id)` already valid for the attribute;
+      // only escape user-supplied solid colors.
+      const fillAttr = fillVal.startsWith('url(') ? fillVal : escapeXml(fillVal);
+      const transformStr = textTransformString(text);
+      const transformAttr = transformStr ? ` transform="${transformStr}"` : '';
+      return `  <text x="${text.x}" y="${text.y}" text-anchor="${text.anchor}" font-family="${escapeXml(text.fontFamily)}" font-size="${text.fontSize}" font-weight="${text.fontWeight}"${italicAttr}${decorationAttr}${trackingAttr}${baselineAttr}${opacityAttr}${transformAttr} fill="${fillAttr}">${escapeXml(text.content)}</text>`;
+    })
     .join('\n');
 
   return [

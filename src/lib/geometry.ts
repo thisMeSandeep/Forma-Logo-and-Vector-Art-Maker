@@ -69,18 +69,18 @@ export function getShapeTransform(shape: Shape): ShapeTransform {
   return shape.transform ?? IDENTITY_TRANSFORM;
 }
 
-// Returns the SVG transform attribute value for a shape, or empty when identity.
-// The transform is applied around the bbox center of the baked points, so visual
-// translation comes from editing points and rotation/scale/skew compose on top.
-export function shapeTransformString(shape: Shape): string {
-  const t = shape.transform;
-  if (!t) return '';
-  const isIdentity =
-    t.rotation === 0 && t.scaleX === 1 && t.scaleY === 1 && t.skewX === 0 && t.skewY === 0;
-  if (isIdentity) return '';
-  const bbox = bboxOfRings(shape.points);
-  const cx = bbox.x + bbox.w / 2;
-  const cy = bbox.y + bbox.h / 2;
+// 2x2 matrix + pivot describing a transform: world = pivot + M·(p - pivot).
+export type ShapeMatrix = { a: number; b: number; c: number; d: number; cx: number; cy: number };
+export const IDENTITY_MATRIX: ShapeMatrix = { a: 1, b: 0, c: 0, d: 1, cx: 0, cy: 0 };
+
+function isIdentityTransform(t: ShapeTransform): boolean {
+  return t.rotation === 0 && t.scaleX === 1 && t.scaleY === 1 && t.skewX === 0 && t.skewY === 0;
+}
+
+// Generic transform serializer — given a transform and the pivot to spin around,
+// emits the SVG transform attribute. Empty when identity / undefined.
+export function transformToString(t: ShapeTransform | undefined, cx: number, cy: number): string {
+  if (!t || isIdentityTransform(t)) return '';
   // Order: translate to origin → skew/rotate/scale → translate back.
   // SVG applies transforms right-to-left, so the string order below is correct.
   return [
@@ -93,23 +93,15 @@ export function shapeTransformString(shape: Shape): string {
   ].join(' ');
 }
 
-// 2x2 matrix + pivot describing a shape's transform: world = pivot + M·(p - pivot).
-export type ShapeMatrix = { a: number; b: number; c: number; d: number; cx: number; cy: number };
-export const IDENTITY_MATRIX: ShapeMatrix = { a: 1, b: 0, c: 0, d: 1, cx: 0, cy: 0 };
-
-export function shapeMatrix(shape: Shape): ShapeMatrix {
-  const bbox = bboxOfRings(shape.points);
-  const cx = bbox.x + bbox.w / 2;
-  const cy = bbox.y + bbox.h / 2;
-  const t = shape.transform;
+// Generic transform → 2x2 matrix + pivot. Used by anything that needs to project
+// local-space points into world space (selection handles, hit-testing, etc).
+export function transformToMatrix(t: ShapeTransform | undefined, cx: number, cy: number): ShapeMatrix {
   if (!t) return { ...IDENTITY_MATRIX, cx, cy };
-
   const rad = (deg: number) => (deg * Math.PI) / 180;
   const cosR = Math.cos(rad(t.rotation));
   const sinR = Math.sin(rad(t.rotation));
   const tanKx = Math.tan(rad(t.skewX));
   const tanKy = Math.tan(rad(t.skewY));
-
   // M = R · SkewX · SkewY · Scale, matching the SVG attribute order
   // "rotate skewX skewY scale" (SVG applies transforms right-to-left, so a
   // point is first scaled, then skewed-Y, then skewed-X, then rotated).
@@ -118,6 +110,19 @@ export function shapeMatrix(shape: Shape): ShapeMatrix {
   const c = t.scaleY * (cosR * tanKx - sinR);
   const d = t.scaleY * (sinR * tanKx + cosR);
   return { a, b, c, d, cx, cy };
+}
+
+// Returns the SVG transform attribute value for a shape, or empty when identity.
+// The transform is applied around the bbox center of the baked points, so visual
+// translation comes from editing points and rotation/scale/skew compose on top.
+export function shapeTransformString(shape: Shape): string {
+  const bbox = bboxOfRings(shape.points);
+  return transformToString(shape.transform, bbox.x + bbox.w / 2, bbox.y + bbox.h / 2);
+}
+
+export function shapeMatrix(shape: Shape): ShapeMatrix {
+  const bbox = bboxOfRings(shape.points);
+  return transformToMatrix(shape.transform, bbox.x + bbox.w / 2, bbox.y + bbox.h / 2);
 }
 
 export function applyShapeMatrix(m: ShapeMatrix, p: Point): Point {

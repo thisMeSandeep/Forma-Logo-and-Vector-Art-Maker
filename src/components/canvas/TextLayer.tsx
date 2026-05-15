@@ -2,9 +2,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import type { TextItem } from '../../types';
 import { screenToWorld } from '../../hooks/useViewBox';
+import { gradientEndpoints } from '../../lib/shapeStyle';
+import {
+  textFillKind,
+  textFillRef,
+  textLinearId,
+  textPatternId,
+  textRadialId,
+} from '../../lib/textStyle';
+import { textTransformString } from '../../lib/textGeometry';
 
 function estimateTextWidth(text: TextItem) {
-  return Math.max(text.fontSize * 2, text.content.length * text.fontSize * 0.62);
+  const tracking = text.letterSpacing ?? 0;
+  const base = Math.max(text.fontSize * 2, text.content.length * text.fontSize * 0.62);
+  return base + Math.max(0, text.content.length - 1) * tracking;
 }
 
 function anchorOffset(anchor: TextItem['anchor'], width: number) {
@@ -121,6 +132,52 @@ export function TextLayer() {
       data-text-interaction="true"
       style={{ pointerEvents: activeTool === 'text' || activeTool === 'select' ? 'auto' : 'none' }}
     >
+      <defs>
+        {texts.map((text) => {
+          const kind = textFillKind(text);
+          if (kind === 'linear' && text.fillGradient) {
+            const { from, to, angle } = text.fillGradient;
+            const { x1, y1, x2, y2 } = gradientEndpoints(angle);
+            return (
+              <linearGradient key={`l-${text.id}`} id={textLinearId(text)} x1={x1} y1={y1} x2={x2} y2={y2}>
+                <stop offset="0%" stopColor={from} />
+                <stop offset="100%" stopColor={to} />
+              </linearGradient>
+            );
+          }
+          if (kind === 'radial' && text.fillRadial) {
+            const { from, to } = text.fillRadial;
+            return (
+              <radialGradient key={`r-${text.id}`} id={textRadialId(text)} cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0%" stopColor={from} />
+                <stop offset="100%" stopColor={to} />
+              </radialGradient>
+            );
+          }
+          if (kind === 'image' && text.fillImage) {
+            return (
+              <pattern
+                key={`p-${text.id}`}
+                id={textPatternId(text)}
+                patternUnits="objectBoundingBox"
+                patternContentUnits="objectBoundingBox"
+                width="1"
+                height="1"
+              >
+                <image
+                  href={text.fillImage.dataUrl}
+                  x={0}
+                  y={0}
+                  width={1}
+                  height={1}
+                  preserveAspectRatio="xMidYMid slice"
+                />
+              </pattern>
+            );
+          }
+          return null;
+        })}
+      </defs>
       {texts.map((text) => {
         const selected = text.id === selectedTextId;
         const editing = text.id === editingTextId;
@@ -128,9 +185,10 @@ export function TextLayer() {
         const x = text.x + anchorOffset(text.anchor, width);
         const y = text.y - text.fontSize;
         const height = text.fontSize * 1.4;
+        const transform = textTransformString(text);
 
         return (
-          <g key={text.id}>
+          <g key={text.id} transform={transform || undefined}>
             {selected && !editing && (
               <rect
                 x={x - 4}
@@ -142,6 +200,7 @@ export function TextLayer() {
                 strokeWidth={1}
                 strokeDasharray="4 3"
                 pointerEvents="none"
+                vectorEffect="non-scaling-stroke"
               />
             )}
 
@@ -175,6 +234,10 @@ export function TextLayer() {
                     fontFamily: text.fontFamily,
                     fontSize: text.fontSize,
                     fontWeight: text.fontWeight,
+                    fontStyle: text.italic ? 'italic' : undefined,
+                    textDecoration: text.decoration && text.decoration !== 'none' ? text.decoration : undefined,
+                    letterSpacing: text.letterSpacing ? `${text.letterSpacing}px` : undefined,
+                    lineHeight: text.lineHeight ?? undefined,
                     color: text.fill,
                     backgroundColor: editBackgroundFor(text.fill),
                   }}
@@ -190,8 +253,12 @@ export function TextLayer() {
                 fontFamily={text.fontFamily}
                 fontSize={text.fontSize}
                 fontWeight={text.fontWeight}
-                fill={text.fill}
-                dominantBaseline="alphabetic"
+                fontStyle={text.italic ? 'italic' : undefined}
+                textDecoration={text.decoration && text.decoration !== 'none' ? text.decoration : undefined}
+                letterSpacing={text.letterSpacing ? text.letterSpacing : undefined}
+                fill={textFillRef(text)}
+                opacity={text.opacity != null && text.opacity !== 1 ? text.opacity : undefined}
+                dominantBaseline={text.baseline ?? 'alphabetic'}
                 className="select-none"
                 style={{ cursor: 'move' }}
                 onPointerDown={(e) => startDrag(e, text)}

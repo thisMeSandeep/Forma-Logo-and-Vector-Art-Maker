@@ -81,6 +81,7 @@ export const STROKE_STYLE_DEFAULT = 'solid' as const;
 export const SHADOW_DEFAULT = { x: 0, y: 2, blur: 6, color: '#00000066' };
 export const BLUR_DEFAULT = 4;
 export const GRADIENT_DEFAULT = { from: '#2563eb', to: '#9333ea', angle: 90 };
+export const RADIAL_GRADIENT_DEFAULT = { from: '#fde68a', to: '#dc2626' };
 
 // Canvas background — independent of UI theme so the design surface can be any color
 export const CANVAS_BG_DEFAULT = '#f5f5f5';
@@ -93,6 +94,29 @@ export const TEXT_FONT_SIZE_MAX = 200;
 export const TEXT_FONT_WEIGHT_DEFAULT = 600 as const;
 export const TEXT_FILL_DEFAULT = '#ffffff';
 export const TEXT_ANCHOR_DEFAULT = 'middle' as const;
+export const TEXT_ITALIC_DEFAULT = false;
+export const TEXT_DECORATION_DEFAULT = 'none' as const;
+export const TEXT_LETTER_SPACING_DEFAULT = 0;
+export const TEXT_LETTER_SPACING_MIN = -10;
+export const TEXT_LETTER_SPACING_MAX = 50;
+export const TEXT_LINE_HEIGHT_DEFAULT = 1.2;
+export const TEXT_LINE_HEIGHT_MIN = 0.8;
+export const TEXT_LINE_HEIGHT_MAX = 3;
+export const TEXT_BASELINE_DEFAULT = 'alphabetic' as const;
+export const TEXT_OPACITY_DEFAULT = 1;
+
+// Full variable-font weight ladder. Geist Variable supports the whole range.
+export const TEXT_FONT_WEIGHT_OPTIONS: { label: string; value: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 }[] = [
+  { label: 'Thin',        value: 100 },
+  { label: 'ExtraLight',  value: 200 },
+  { label: 'Light',       value: 300 },
+  { label: 'Regular',     value: 400 },
+  { label: 'Medium',      value: 500 },
+  { label: 'SemiBold',    value: 600 },
+  { label: 'Bold',        value: 700 },
+  { label: 'ExtraBold',   value: 800 },
+  { label: 'Black',       value: 900 },
+];
 
 // Web-safe font stacks the user can pick from in the sidebar
 export const TEXT_FONT_OPTIONS: { label: string; value: string }[] = [

@@ -1,5 +1,18 @@
-import { useState } from 'react';
-import { AlignCenter, AlignLeft, AlignRight, Type } from 'lucide-react';
+import { useRef, useState } from 'react';
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  ArrowDownToLine,
+  ArrowUpToLine,
+  Image as ImageIcon,
+  Italic,
+  Minus,
+  Strikethrough,
+  Type,
+  Underline,
+  Upload,
+} from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
 import { useAppStore } from '../../store/useAppStore';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -7,16 +20,31 @@ import { Slider } from '../ui/slider';
 import { Section, PropertyRow } from './Section';
 import { NumberField } from './NumberField';
 import {
+  GRADIENT_DEFAULT,
+  RADIAL_GRADIENT_DEFAULT,
   TEXT_FONT_OPTIONS,
   TEXT_FONT_SIZE_MAX,
   TEXT_FONT_SIZE_MIN,
+  TEXT_FONT_WEIGHT_OPTIONS,
+  TEXT_LETTER_SPACING_MAX,
+  TEXT_LETTER_SPACING_MIN,
+  TEXT_LINE_HEIGHT_MAX,
+  TEXT_LINE_HEIGHT_MIN,
 } from '../../config/constants';
-import type { FontWeight, TextAnchor } from '../../types';
+import type {
+  TextAnchor,
+  TextBaseline,
+  TextDecoration,
+  TextFillKind,
+  TextItem,
+} from '../../types';
 
-function TextColorRow({
+function ColorRow({
+  label,
   value,
   onChange,
 }: {
+  label: string;
   value: string;
   onChange: (color: string) => void;
 }) {
@@ -39,7 +67,7 @@ function TextColorRow({
   }
 
   return (
-    <PropertyRow label="Color">
+    <PropertyRow label={label}>
       <div
         className="flex items-center h-7 rounded border bg-foreground/[0.03] overflow-hidden"
         style={{ borderColor: 'var(--panel-border)' }}
@@ -49,7 +77,7 @@ function TextColorRow({
             <button
               className="w-7 h-7 border-r hover:opacity-90 transition-opacity"
               style={{ background: value, borderColor: 'var(--panel-border)' }}
-              aria-label="Pick text color"
+              aria-label={`Pick ${label.toLowerCase()}`}
             />
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2" align="end">
@@ -79,12 +107,40 @@ function TextColorRow({
   );
 }
 
-const WEIGHTS: { label: string; value: FontWeight }[] = [
-  { label: 'R', value: 400 },
-  { label: 'M', value: 500 },
-  { label: 'S', value: 600 },
-  { label: 'B', value: 700 },
-];
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div
+      className="flex p-0.5 rounded-md border bg-foreground/[0.03] w-full min-w-0"
+      style={{ borderColor: 'var(--panel-border)' }}
+    >
+      {options.map((opt) => {
+        const isActive = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={[
+              'flex-1 min-w-0 h-7 px-2 flex items-center justify-center rounded text-[11px] font-medium transition-all truncate',
+              isActive
+                ? 'bg-background text-foreground shadow-sm ring-1 ring-foreground/5'
+                : 'text-muted-foreground hover:text-foreground',
+            ].join(' ')}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 const ANCHORS: { label: string; value: TextAnchor; icon: typeof AlignLeft }[] = [
   { label: 'Left', value: 'start', icon: AlignLeft },
@@ -92,20 +148,235 @@ const ANCHORS: { label: string; value: TextAnchor; icon: typeof AlignLeft }[] = 
   { label: 'Right', value: 'end', icon: AlignRight },
 ];
 
+const BASELINES: { label: string; value: TextBaseline; icon: typeof ArrowUpToLine }[] = [
+  { label: 'Top',      value: 'hanging',     icon: ArrowUpToLine },
+  { label: 'Middle',   value: 'middle',      icon: AlignCenter },
+  { label: 'Baseline', value: 'alphabetic',  icon: Minus },
+  { label: 'Bottom',   value: 'ideographic', icon: ArrowDownToLine },
+];
+
+function ToggleButton({
+  active,
+  onClick,
+  title,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="h-7 w-8 flex items-center justify-center transition-colors hover:bg-foreground/[0.06]"
+      style={{
+        background: active ? 'var(--accent)' : 'transparent',
+        color: active ? 'var(--accent-foreground)' : undefined,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// Reads an image file as a base64 data URL so it travels with exported SVGs.
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function FillSection({
+  text,
+  patch,
+  fallbackFill,
+  setFallbackFill,
+}: {
+  text: TextItem;
+  patch: (p: Partial<TextItem>) => void;
+  fallbackFill: string;
+  setFallbackFill: (c: string) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const kind: TextFillKind = text.fillKind ?? 'solid';
+  const linear = text.fillGradient ?? GRADIENT_DEFAULT;
+  const radial = text.fillRadial   ?? RADIAL_GRADIENT_DEFAULT;
+
+  function changeKind(next: TextFillKind) {
+    if (next === kind) return;
+    if (next === 'linear') {
+      patch({ fillKind: 'linear', fillGradient: text.fillGradient ?? GRADIENT_DEFAULT });
+    } else if (next === 'radial') {
+      patch({ fillKind: 'radial', fillRadial: text.fillRadial ?? RADIAL_GRADIENT_DEFAULT });
+    } else if (next === 'image') {
+      patch({ fillKind: 'image' });
+      // Auto-open the picker if no image yet.
+      if (!text.fillImage) requestAnimationFrame(() => fileInputRef.current?.click());
+    } else {
+      patch({ fillKind: 'solid' });
+    }
+  }
+
+  async function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const dataUrl = await readFileAsDataUrl(file);
+    patch({ fillImage: { dataUrl } });
+  }
+
+  return (
+    <>
+      <PropertyRow label="Fill">
+        <div className="w-44">
+          <Segmented<TextFillKind>
+            value={kind}
+            options={[
+              { value: 'solid',  label: 'Solid' },
+              { value: 'linear', label: 'Linear' },
+              { value: 'radial', label: 'Radial' },
+              { value: 'image',  label: 'Image' },
+            ]}
+            onChange={changeKind}
+          />
+        </div>
+      </PropertyRow>
+
+      {kind === 'solid' && (
+        <ColorRow
+          label="Color"
+          value={fallbackFill}
+          onChange={(c) => {
+            setFallbackFill(c);
+            patch({ fill: c });
+          }}
+        />
+      )}
+
+      {kind === 'linear' && (
+        <>
+          <ColorRow
+            label="From"
+            value={linear.from}
+            onChange={(c) => patch({ fillGradient: { ...linear, from: c } })}
+          />
+          <ColorRow
+            label="To"
+            value={linear.to}
+            onChange={(c) => patch({ fillGradient: { ...linear, to: c } })}
+          />
+          <PropertyRow label="Angle">
+            <NumberField
+              value={linear.angle}
+              onChange={(v) => patch({ fillGradient: { ...linear, angle: v } })}
+              step={1}
+              suffix="°"
+            />
+          </PropertyRow>
+          <Slider
+            min={0}
+            max={360}
+            step={1}
+            value={[linear.angle]}
+            onValueChange={([v]) => patch({ fillGradient: { ...linear, angle: v } })}
+          />
+        </>
+      )}
+
+      {kind === 'radial' && (
+        <>
+          <ColorRow
+            label="Center"
+            value={radial.from}
+            onChange={(c) => patch({ fillRadial: { ...radial, from: c } })}
+          />
+          <ColorRow
+            label="Edge"
+            value={radial.to}
+            onChange={(c) => patch({ fillRadial: { ...radial, to: c } })}
+          />
+        </>
+      )}
+
+      {kind === 'image' && (
+        <PropertyRow label="Image">
+          <div className="flex items-center gap-1.5">
+            {text.fillImage && (
+              <div
+                className="w-7 h-7 rounded border bg-center bg-cover"
+                style={{
+                  borderColor: 'var(--panel-border)',
+                  backgroundImage: `url(${text.fillImage.dataUrl})`,
+                }}
+                title="Current image"
+              />
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="h-7 px-2 flex items-center gap-1 rounded border bg-foreground/[0.03] text-[11px] hover:bg-foreground/[0.06]"
+              style={{ borderColor: 'var(--panel-border)' }}
+              title={text.fillImage ? 'Replace image' : 'Choose image'}
+            >
+              <Upload size={11} />
+              {text.fillImage ? 'Replace' : 'Choose'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={onPickImage}
+            />
+          </div>
+        </PropertyRow>
+      )}
+    </>
+  );
+}
+
 export function TextSection() {
   const selectedTextId = useAppStore((s) => s.selectedTextId);
+  const selectedText   = useAppStore((s) =>
+    s.selectedTextId ? s.texts.find((t) => t.id === s.selectedTextId) ?? null : null,
+  );
+  const updateText = useAppStore((s) => s.updateText);
   const fontFamily = useAppStore((s) => s.textFontFamily);
   const fontSize = useAppStore((s) => s.textFontSize);
   const fontWeight = useAppStore((s) => s.textFontWeight);
   const fill = useAppStore((s) => s.textFill);
   const anchor = useAppStore((s) => s.textAnchor);
+  const italic = useAppStore((s) => s.textItalic);
+  const decoration = useAppStore((s) => s.textDecoration);
+  const letterSpacing = useAppStore((s) => s.textLetterSpacing);
+  const lineHeight = useAppStore((s) => s.textLineHeight);
+  const baseline = useAppStore((s) => s.textBaseline);
+  const opacity = useAppStore((s) => s.textOpacity);
   const setFontFamily = useAppStore((s) => s.setTextFontFamily);
   const setFontSize = useAppStore((s) => s.setTextFontSize);
   const setFontWeight = useAppStore((s) => s.setTextFontWeight);
   const setFill = useAppStore((s) => s.setTextFill);
   const setAnchor = useAppStore((s) => s.setTextAnchor);
+  const setItalic = useAppStore((s) => s.setTextItalic);
+  const setDecoration = useAppStore((s) => s.setTextDecoration);
+  const setLetterSpacing = useAppStore((s) => s.setTextLetterSpacing);
+  const setLineHeight = useAppStore((s) => s.setTextLineHeight);
+  const setBaseline = useAppStore((s) => s.setTextBaseline);
+  const setOpacity = useAppStore((s) => s.setTextOpacity);
 
-  if (!selectedTextId) return null;
+  if (!selectedTextId || !selectedText) return null;
+
+  function toggleDecoration(next: TextDecoration) {
+    setDecoration(decoration === next ? 'none' : next);
+  }
+
+  function patchText(p: Partial<TextItem>) {
+    if (selectedTextId) updateText(selectedTextId, p);
+  }
 
   return (
     <Section title="Text" icon={<Type size={11} />}>
@@ -119,6 +390,21 @@ export function TextSection() {
           {TEXT_FONT_OPTIONS.map((font) => (
             <option key={font.value} value={font.value}>
               {font.label}
+            </option>
+          ))}
+        </select>
+      </PropertyRow>
+
+      <PropertyRow label="Weight">
+        <select
+          value={fontWeight}
+          onChange={(e) => setFontWeight(Number(e.target.value) as typeof fontWeight)}
+          className="h-7 w-32 rounded border bg-foreground/[0.03] px-2 text-xs outline-none"
+          style={{ borderColor: 'var(--panel-border)' }}
+        >
+          {TEXT_FONT_WEIGHT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.value} — {opt.label}
             </option>
           ))}
         </select>
@@ -141,32 +427,62 @@ export function TextSection() {
         step={1}
         value={[fontSize]}
         onValueChange={([val]) => setFontSize(val)}
-        className="mt-2"
       />
 
-      <PropertyRow label="Weight">
+      <PropertyRow label="Style">
         <div
-          className="grid grid-cols-4 overflow-hidden rounded border"
+          className="grid grid-cols-3 overflow-hidden rounded border"
           style={{ borderColor: 'var(--panel-border)' }}
         >
-          {WEIGHTS.map((weight) => (
-            <button
-              key={weight.value}
-              onClick={() => setFontWeight(weight.value)}
-              className="h-7 w-8 text-[11px] font-semibold transition-colors hover:bg-foreground/[0.06]"
-              style={{
-                background: fontWeight === weight.value ? 'var(--accent)' : 'transparent',
-                color: fontWeight === weight.value ? 'var(--accent-foreground)' : undefined,
-              }}
-              title={`${weight.value}`}
-            >
-              {weight.label}
-            </button>
-          ))}
+          <ToggleButton active={italic} onClick={() => setItalic(!italic)} title="Italic">
+            <Italic size={13} />
+          </ToggleButton>
+          <ToggleButton
+            active={decoration === 'underline'}
+            onClick={() => toggleDecoration('underline')}
+            title="Underline"
+          >
+            <Underline size={13} />
+          </ToggleButton>
+          <ToggleButton
+            active={decoration === 'line-through'}
+            onClick={() => toggleDecoration('line-through')}
+            title="Strikethrough"
+          >
+            <Strikethrough size={13} />
+          </ToggleButton>
         </div>
       </PropertyRow>
 
-      <TextColorRow value={fill} onChange={setFill} />
+      <div className="flex items-center gap-2 pt-2 text-[11px] uppercase tracking-[0.1em] text-muted-foreground/80">
+        <ImageIcon size={11} />
+        <span>Fill</span>
+      </div>
+
+      <FillSection
+        text={selectedText}
+        patch={patchText}
+        fallbackFill={fill}
+        setFallbackFill={setFill}
+      />
+
+      <PropertyRow label="Opacity">
+        <NumberField
+          value={Math.round(opacity * 100)}
+          onChange={(v) => setOpacity(Math.max(0, Math.min(100, v)) / 100)}
+          min={0}
+          max={100}
+          step={1}
+          suffix="%"
+        />
+      </PropertyRow>
+      <Slider
+        min={0}
+        max={1}
+        step={0.01}
+        value={[opacity]}
+        onValueChange={([v]) => setOpacity(v)}
+      />
 
       <PropertyRow label="Anchor">
         <div
@@ -188,6 +504,49 @@ export function TextSection() {
             </button>
           ))}
         </div>
+      </PropertyRow>
+
+      <PropertyRow label="Baseline">
+        <div
+          className="grid grid-cols-4 overflow-hidden rounded border"
+          style={{ borderColor: 'var(--panel-border)' }}
+        >
+          {BASELINES.map(({ label, value, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => setBaseline(value)}
+              className="h-7 w-8 flex items-center justify-center transition-colors hover:bg-foreground/[0.06]"
+              style={{
+                background: baseline === value ? 'var(--accent)' : 'transparent',
+                color: baseline === value ? 'var(--accent-foreground)' : undefined,
+              }}
+              title={label}
+            >
+              <Icon size={13} />
+            </button>
+          ))}
+        </div>
+      </PropertyRow>
+
+      <PropertyRow label="Tracking">
+        <NumberField
+          value={letterSpacing}
+          onChange={setLetterSpacing}
+          min={TEXT_LETTER_SPACING_MIN}
+          max={TEXT_LETTER_SPACING_MAX}
+          step={0.5}
+          suffix="px"
+        />
+      </PropertyRow>
+
+      <PropertyRow label="Line height">
+        <NumberField
+          value={lineHeight}
+          onChange={setLineHeight}
+          min={TEXT_LINE_HEIGHT_MIN}
+          max={TEXT_LINE_HEIGHT_MAX}
+          step={0.05}
+        />
       </PropertyRow>
     </Section>
   );
