@@ -148,7 +148,7 @@ export function isPrimitiveTool(tool: Tool): tool is PrimitiveTool {
   return (PRIMITIVE_TOOLS as readonly string[]).includes(tool);
 }
 
-export type GridMode = 'square' | 'isometric';
+export type GridMode = 'square' | 'isometric' | 'dots';
 
 // Snapshot used for undo/redo so text and shape edits both participate in history
 export type CanvasSnapshot = {

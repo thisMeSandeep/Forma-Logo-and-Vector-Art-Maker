@@ -7,9 +7,9 @@ export function GridLayer() {
 
   if (!showGrid) return null;
 
-  return gridMode === 'isometric'
-    ? <IsometricGrid gridSize={gridSize} />
-    : <SquareGrid gridSize={gridSize} />;
+  if (gridMode === 'isometric') return <IsometricGrid gridSize={gridSize} />;
+  if (gridMode === 'dots') return <DotsGrid gridSize={gridSize} />;
+  return <SquareGrid gridSize={gridSize} />;
 }
 
 // A rect this large ensures the pattern covers any pan/zoom position.
@@ -40,6 +40,35 @@ function SquareGrid({ gridSize }: { gridSize: number }) {
         x={-GRID_EXTENT} y={-GRID_EXTENT}
         width={GRID_EXTENT * 2} height={GRID_EXTENT * 2}
         fill="url(#grid-pattern)"
+      />
+    </g>
+  );
+}
+
+function DotsGrid({ gridSize }: { gridSize: number }) {
+  // One dot per cell, placed at the cell origin so dots align with the same
+  // intersection points the square grid would draw. Radius scales gently with
+  // cell size so dense grids stay readable.
+  const r = Math.max(0.75, Math.min(2, gridSize / 28));
+  return (
+    <g id="grid-layer">
+      <defs>
+        <pattern
+          id="dots-grid-pattern"
+          width={gridSize}
+          height={gridSize}
+          patternUnits="userSpaceOnUse"
+        >
+          <circle cx={0} cy={0} r={r} fill="var(--grid-line-stroke)" />
+          <circle cx={gridSize} cy={0} r={r} fill="var(--grid-line-stroke)" />
+          <circle cx={0} cy={gridSize} r={r} fill="var(--grid-line-stroke)" />
+          <circle cx={gridSize} cy={gridSize} r={r} fill="var(--grid-line-stroke)" />
+        </pattern>
+      </defs>
+      <rect
+        x={-GRID_EXTENT} y={-GRID_EXTENT}
+        width={GRID_EXTENT * 2} height={GRID_EXTENT * 2}
+        fill="url(#dots-grid-pattern)"
       />
     </g>
   );

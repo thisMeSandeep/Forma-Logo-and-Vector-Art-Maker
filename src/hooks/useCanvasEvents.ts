@@ -201,7 +201,7 @@ export function useCanvasEvents(
       }
 
       const world = getWorldPoint(e);
-      const snap  = gridModeRef.current === 'square' ? snapToSquare : snapToIsometric;
+      const snap  = gridModeRef.current === 'isometric' ? snapToIsometric : snapToSquare;
       let snapped = snap(world, gridSizeRef.current);
 
       // Lock snap onto first point when near it so closing is pixel-perfect
@@ -325,7 +325,7 @@ export function useCanvasEvents(
         return;
       }
 
-      const snap    = gridModeRef.current === 'square' ? snapToSquare : snapToIsometric;
+      const snap    = gridModeRef.current === 'isometric' ? snapToIsometric : snapToSquare;
       const snapped = snap(world, gridSizeRef.current);
 
       // Primitive tools: capture drag start. Drag end (pointerup) commits.
@@ -391,7 +391,7 @@ export function useCanvasEvents(
       const tool = activeToolRef.current;
       if (e.button === 0 && store.dragStart && isPrimitiveTool(tool)) {
         const world = getWorldPoint(e);
-        const snap  = gridModeRef.current === 'square' ? snapToSquare : snapToIsometric;
+        const snap  = gridModeRef.current === 'isometric' ? snapToIsometric : snapToSquare;
         let snapped = snap(world, gridSizeRef.current);
         // Shift on rect/ellipse: constrain to square/circle
         if (store.shiftConstrain && (tool === 'rectangle' || tool === 'ellipse')) {

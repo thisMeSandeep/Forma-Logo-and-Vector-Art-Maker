@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ZoomIn, ZoomOut, Maximize2, Layers, Grid3x3, Hexagon, MousePointer2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Layers, Grid3x3, Grip, Hexagon, MousePointer2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { ZOOM_BUTTON_FACTOR } from '../../config/constants';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -24,7 +24,8 @@ export function CanvasOverlay() {
   const zoom = initialViewBox ? initialViewBox.w / viewBox.w : 1;
   const zoomPct = Math.round(zoom * 100);
 
-  const GridIcon = gridMode === 'isometric' ? Hexagon : Grid3x3;
+  const GridIcon = gridMode === 'isometric' ? Hexagon : gridMode === 'dots' ? Grip : Grid3x3;
+  const gridLabel = gridMode === 'isometric' ? 'Isometric' : gridMode === 'dots' ? 'Dots' : 'Square';
 
   return (
     <>
@@ -59,7 +60,7 @@ export function CanvasOverlay() {
             <Divider />
 
             <StatusChip icon={<GridIcon size={11} />}>
-              <span>{gridMode === 'isometric' ? 'Isometric' : 'Square'}</span>
+              <span>{gridLabel}</span>
               <span className="opacity-60 tabular-nums">{gridSize}px</span>
             </StatusChip>
           </div>

@@ -1,4 +1,4 @@
-import { Grid3x3, Hexagon, LayoutGrid } from 'lucide-react';
+import { Grid3x3, Grip, Hexagon, LayoutGrid } from 'lucide-react';
 import { Slider } from '../ui/slider';
 import { useAppStore } from '../../store/useAppStore';
 import { GRID_SIZE_MIN, GRID_SIZE_MAX } from '../../config/constants';
@@ -9,6 +9,7 @@ import type { GridMode } from '../../types';
 const MODES: { value: GridMode; label: string; icon: typeof Grid3x3 }[] = [
   { value: 'square',    label: 'Square', icon: Grid3x3 },
   { value: 'isometric', label: 'Iso',    icon: Hexagon },
+  { value: 'dots',      label: 'Dots',   icon: Grip },
 ];
 
 export function GridSection() {
