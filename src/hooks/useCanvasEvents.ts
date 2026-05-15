@@ -259,9 +259,10 @@ export function useCanvasEvents(
         }
       }
 
-      // Middle mouse OR Space+left → start pan
+      // Middle mouse OR Space+left OR pan-tool+left → start pan
       const isSpacePan = e.button === 0 && useAppStore.getState().spaceDown;
-      if (e.button === 1 || isSpacePan) {
+      const isToolPan  = e.button === 0 && activeToolRef.current === 'pan';
+      if (e.button === 1 || isSpacePan || isToolPan) {
         e.preventDefault();
         isPanningRef.current  = true;
         lastPanPosRef.current = { x: e.clientX, y: e.clientY };

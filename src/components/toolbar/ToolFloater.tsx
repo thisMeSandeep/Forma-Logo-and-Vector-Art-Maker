@@ -3,6 +3,7 @@ import {
   Scissors,
   Type,
   MousePointer2,
+  Hand,
   Square,
   Circle,
   Hexagon,
@@ -19,6 +20,7 @@ type ToolEntry = { value: Tool; Icon: LucideIcon; label: string };
 
 const TOOLS: ToolEntry[] = [
   { value: 'select',    Icon: MousePointer2, label: 'Select' },
+  { value: 'pan',       Icon: Hand,          label: 'Pan canvas' },
   { value: 'draw',      Icon: Pencil,        label: 'Draw' },
   { value: 'rectangle', Icon: Square,        label: 'Rectangle' },
   { value: 'ellipse',   Icon: Circle,        label: 'Ellipse' },

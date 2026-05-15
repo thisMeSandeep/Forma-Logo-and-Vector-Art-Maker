@@ -23,7 +23,7 @@ export function DrawingCanvas() {
   const activeTool       = useAppStore((s) => s.activeTool);
   const spaceDown        = useAppStore((s) => s.spaceDown);
   const canvasBackground = useAppStore((s) => s.canvasBackground);
-  const cursor = spaceDown
+  const cursor = spaceDown || activeTool === 'pan'
     ? 'grab'
     : activeTool === 'draw' || activeTool === 'cutout' || isPrimitiveTool(activeTool)
       ? 'none'

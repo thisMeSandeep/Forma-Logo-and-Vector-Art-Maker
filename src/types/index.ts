@@ -134,6 +134,7 @@ export type Tool =
   | 'cutout'
   | 'text'
   | 'select'
+  | 'pan'
   | 'rectangle'
   | 'ellipse'
   | 'polygon'

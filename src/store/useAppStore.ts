@@ -198,9 +198,11 @@ export const useAppStore = create<AppState>()(
         setActiveTool: (tool) =>
           set((s) => ({
             activeTool: tool,
-            selectedTextId: tool === 'text' || tool === 'select' ? s.selectedTextId : null,
-            editingTextId:  tool === 'text' || tool === 'select' ? s.editingTextId  : null,
-            selectedShapeId: tool === 'select' ? s.selectedShapeId : null,
+            // Pan is a transient navigation tool — preserve whatever is currently
+            // selected so the user can pan and immediately resume editing.
+            selectedTextId: tool === 'text' || tool === 'select' || tool === 'pan' ? s.selectedTextId : null,
+            editingTextId:  tool === 'text' || tool === 'select' || tool === 'pan' ? s.editingTextId  : null,
+            selectedShapeId: tool === 'select' || tool === 'pan' ? s.selectedShapeId : null,
           })),
         setGridMode: (mode) => set({ gridMode: mode }),
         setGridSize: (size) => set({ gridSize: size }),
