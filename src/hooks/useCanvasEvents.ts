@@ -92,6 +92,9 @@ export function useCanvasEvents(
   const textLineHeightRef = useRef(useAppStore.getState().textLineHeight);
   const textBaselineRef = useRef(useAppStore.getState().textBaseline);
   const textOpacityRef = useRef(useAppStore.getState().textOpacity);
+  const textStrokeRef = useRef(useAppStore.getState().textStroke);
+  const textStrokeWidthRef = useRef(useAppStore.getState().textStrokeWidth);
+  const textStrokeStyleRef = useRef(useAppStore.getState().textStrokeStyle);
   const activeToolRef  = useRef(useAppStore.getState().activeTool);
 
   // Refs for stable callbacks (these don't change identity after mount)
@@ -133,6 +136,9 @@ export function useCanvasEvents(
       textLineHeightRef.current = s.textLineHeight;
       textBaselineRef.current = s.textBaseline;
       textOpacityRef.current = s.textOpacity;
+      textStrokeRef.current = s.textStroke;
+      textStrokeWidthRef.current = s.textStrokeWidth;
+      textStrokeStyleRef.current = s.textStrokeStyle;
       activeToolRef.current  = s.activeTool;
     }),
   []);
@@ -300,6 +306,9 @@ export function useCanvasEvents(
           lineHeight: textLineHeightRef.current,
           baseline: textBaselineRef.current,
           opacity: textOpacityRef.current,
+          stroke: textStrokeRef.current,
+          strokeWidth: textStrokeWidthRef.current,
+          strokeStyle: textStrokeStyleRef.current,
         };
         const s = useAppStore.getState();
         s.addText(text);

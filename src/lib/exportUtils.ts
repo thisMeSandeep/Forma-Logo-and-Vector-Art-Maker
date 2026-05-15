@@ -11,7 +11,7 @@ import {
   strokeDashArray,
   strokeLinecap,
 } from './shapeStyle';
-import { textDefsMarkup, textFillRef } from './textStyle';
+import { textDefsMarkup, textFillRef, textStrokeDashArray, textStrokeLinecap } from './textStyle';
 import { textBBox, textMatrix, textTransformString } from './textGeometry';
 import { applyShapeMatrix } from './geometry';
 
@@ -130,7 +130,13 @@ function buildShapesSVG(shapes: Shape[], texts: TextItem[]): string {
       const fillAttr = fillVal.startsWith('url(') ? fillVal : escapeXml(fillVal);
       const transformStr = textTransformString(text);
       const transformAttr = transformStr ? ` transform="${transformStr}"` : '';
-      return `  <text x="${text.x}" y="${text.y}" text-anchor="${text.anchor}" font-family="${escapeXml(text.fontFamily)}" font-size="${text.fontSize}" font-weight="${text.fontWeight}"${italicAttr}${decorationAttr}${trackingAttr}${baselineAttr}${opacityAttr}${transformAttr} fill="${fillAttr}">${escapeXml(text.content)}</text>`;
+      const hasStroke = !!(text.strokeWidth && text.strokeWidth > 0);
+      const strokeAttr      = hasStroke ? ` stroke="${escapeXml(text.stroke ?? '#000000')}" stroke-width="${text.strokeWidth}" paint-order="stroke fill" stroke-linejoin="round"` : '';
+      const dash = hasStroke ? textStrokeDashArray(text) : undefined;
+      const dashAttr        = dash ? ` stroke-dasharray="${dash}"` : '';
+      const cap = hasStroke ? textStrokeLinecap(text) : undefined;
+      const capAttr         = cap ? ` stroke-linecap="${cap}"` : '';
+      return `  <text x="${text.x}" y="${text.y}" text-anchor="${text.anchor}" font-family="${escapeXml(text.fontFamily)}" font-size="${text.fontSize}" font-weight="${text.fontWeight}"${italicAttr}${decorationAttr}${trackingAttr}${baselineAttr}${opacityAttr}${transformAttr}${strokeAttr}${dashAttr}${capAttr} fill="${fillAttr}">${escapeXml(text.content)}</text>`;
     })
     .join('\n');
 

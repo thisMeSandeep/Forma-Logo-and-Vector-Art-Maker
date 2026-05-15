@@ -20,6 +20,9 @@ import {
   TEXT_LINE_HEIGHT_DEFAULT,
   TEXT_BASELINE_DEFAULT,
   TEXT_OPACITY_DEFAULT,
+  TEXT_STROKE_DEFAULT,
+  TEXT_STROKE_WIDTH_DEFAULT,
+  TEXT_STROKE_STYLE_DEFAULT,
   POLYGON_SIDES_DEFAULT,
   STAR_POINTS_DEFAULT,
   STAR_INNER_RATIO_DEFAULT,
@@ -52,6 +55,7 @@ import type {
   FontWeight,
   CanvasSnapshot,
   ShapeTransform,
+  StrokeStyle,
 } from '../types';
 import { IDENTITY_TRANSFORM } from '../types';
 
@@ -95,6 +99,9 @@ export const useAppStore = create<AppState>()(
         textLineHeight: TEXT_LINE_HEIGHT_DEFAULT,
         textBaseline: TEXT_BASELINE_DEFAULT,
         textOpacity: TEXT_OPACITY_DEFAULT,
+        textStroke: TEXT_STROKE_DEFAULT,
+        textStrokeWidth: TEXT_STROKE_WIDTH_DEFAULT,
+        textStrokeStyle: TEXT_STROKE_STYLE_DEFAULT,
         selectedShapeId: null,
         selectedTextId: null,
         editingTextId: null,
@@ -382,6 +389,9 @@ export const useAppStore = create<AppState>()(
             textLineHeight:    text.lineHeight    ?? s.textLineHeight,
             textBaseline:      text.baseline      ?? s.textBaseline,
             textOpacity:       text.opacity       ?? s.textOpacity,
+            textStroke:        text.stroke        ?? s.textStroke,
+            textStrokeWidth:   text.strokeWidth   ?? s.textStrokeWidth,
+            textStrokeStyle:   text.strokeStyle   ?? s.textStrokeStyle,
             history: pushHistory(),
             future: [],
           })),
@@ -418,6 +428,9 @@ export const useAppStore = create<AppState>()(
               textLineHeight:    text?.lineHeight    ?? s.textLineHeight,
               textBaseline:      text?.baseline      ?? s.textBaseline,
               textOpacity:       text?.opacity       ?? s.textOpacity,
+              textStroke:        text?.stroke        ?? s.textStroke,
+              textStrokeWidth:   text?.strokeWidth   ?? s.textStrokeWidth,
+              textStrokeStyle:   text?.strokeStyle   ?? s.textStrokeStyle,
             };
           }),
 
@@ -446,6 +459,12 @@ export const useAppStore = create<AppState>()(
           set((s) => ({ textBaseline: b, texts: patchSelectedText(s.texts, s.selectedTextId, 'baseline', b) })),
         setTextOpacity: (o: number) =>
           set((s) => ({ textOpacity: o, texts: patchSelectedText(s.texts, s.selectedTextId, 'opacity', o) })),
+        setTextStroke: (c: string) =>
+          set((s) => ({ textStroke: c, texts: patchSelectedText(s.texts, s.selectedTextId, 'stroke', c) })),
+        setTextStrokeWidth: (w: number) =>
+          set((s) => ({ textStrokeWidth: w, texts: patchSelectedText(s.texts, s.selectedTextId, 'strokeWidth', w) })),
+        setTextStrokeStyle: (st: StrokeStyle) =>
+          set((s) => ({ textStrokeStyle: st, texts: patchSelectedText(s.texts, s.selectedTextId, 'strokeStyle', st) })),
 
         // Live transform during drag (no history). Caller should commitHistory on pointerup.
         setTextTransform: (id: string, patch: Partial<ShapeTransform>) =>
@@ -486,6 +505,9 @@ export const useAppStore = create<AppState>()(
         textLineHeight:    state.textLineHeight,
         textBaseline:      state.textBaseline,
         textOpacity:       state.textOpacity,
+        textStroke:        state.textStroke,
+        textStrokeWidth:   state.textStrokeWidth,
+        textStrokeStyle:   state.textStrokeStyle,
         gridSize:       state.gridSize,
         gridMode:       state.gridMode,
         showGrid:       state.showGrid,

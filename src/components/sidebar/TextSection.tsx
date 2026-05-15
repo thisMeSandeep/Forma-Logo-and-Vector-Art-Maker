@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Italic,
   Minus,
+  Spline,
   Strikethrough,
   Type,
   Underline,
@@ -30,8 +31,11 @@ import {
   TEXT_LETTER_SPACING_MIN,
   TEXT_LINE_HEIGHT_MAX,
   TEXT_LINE_HEIGHT_MIN,
+  TEXT_STROKE_WIDTH_MAX,
+  TEXT_STROKE_WIDTH_MIN,
 } from '../../config/constants';
 import type {
+  StrokeStyle,
   TextAnchor,
   TextBaseline,
   TextDecoration,
@@ -237,6 +241,7 @@ function FillSection({
           <Segmented<TextFillKind>
             value={kind}
             options={[
+              { value: 'none',   label: 'None' },
               { value: 'solid',  label: 'Solid' },
               { value: 'linear', label: 'Linear' },
               { value: 'radial', label: 'Radial' },
@@ -356,6 +361,9 @@ export function TextSection() {
   const lineHeight = useAppStore((s) => s.textLineHeight);
   const baseline = useAppStore((s) => s.textBaseline);
   const opacity = useAppStore((s) => s.textOpacity);
+  const stroke = useAppStore((s) => s.textStroke);
+  const strokeWidth = useAppStore((s) => s.textStrokeWidth);
+  const strokeStyle = useAppStore((s) => s.textStrokeStyle);
   const setFontFamily = useAppStore((s) => s.setTextFontFamily);
   const setFontSize = useAppStore((s) => s.setTextFontSize);
   const setFontWeight = useAppStore((s) => s.setTextFontWeight);
@@ -367,6 +375,9 @@ export function TextSection() {
   const setLineHeight = useAppStore((s) => s.setTextLineHeight);
   const setBaseline = useAppStore((s) => s.setTextBaseline);
   const setOpacity = useAppStore((s) => s.setTextOpacity);
+  const setStroke = useAppStore((s) => s.setTextStroke);
+  const setStrokeWidth = useAppStore((s) => s.setTextStrokeWidth);
+  const setStrokeStyle = useAppStore((s) => s.setTextStrokeStyle);
 
   if (!selectedTextId || !selectedText) return null;
 
@@ -483,6 +494,47 @@ export function TextSection() {
         value={[opacity]}
         onValueChange={([v]) => setOpacity(v)}
       />
+
+      <div className="flex items-center gap-2 pt-2 text-[11px] uppercase tracking-[0.1em] text-muted-foreground/80">
+        <Spline size={11} />
+        <span>Stroke</span>
+      </div>
+
+      <ColorRow label="Color" value={stroke} onChange={setStroke} />
+
+      <PropertyRow label="Width">
+        <NumberField
+          value={strokeWidth}
+          onChange={setStrokeWidth}
+          min={TEXT_STROKE_WIDTH_MIN}
+          max={TEXT_STROKE_WIDTH_MAX}
+          step={0.5}
+          suffix="px"
+        />
+      </PropertyRow>
+      <Slider
+        min={TEXT_STROKE_WIDTH_MIN}
+        max={TEXT_STROKE_WIDTH_MAX}
+        step={0.5}
+        value={[strokeWidth]}
+        onValueChange={([v]) => setStrokeWidth(v)}
+      />
+
+      {strokeWidth > 0 && (
+        <PropertyRow label="Style">
+          <div className="w-44">
+            <Segmented<StrokeStyle>
+              value={strokeStyle}
+              options={[
+                { value: 'solid',  label: 'Solid' },
+                { value: 'dashed', label: 'Dashed' },
+                { value: 'dotted', label: 'Dotted' },
+              ]}
+              onChange={setStrokeStyle}
+            />
+          </div>
+        </PropertyRow>
+      )}
 
       <PropertyRow label="Anchor">
         <div

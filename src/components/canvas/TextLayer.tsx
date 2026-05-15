@@ -9,6 +9,8 @@ import {
   textLinearId,
   textPatternId,
   textRadialId,
+  textStrokeDashArray,
+  textStrokeLinecap,
 } from '../../lib/textStyle';
 import { textTransformString } from '../../lib/textGeometry';
 
@@ -257,6 +259,12 @@ export function TextLayer() {
                 textDecoration={text.decoration && text.decoration !== 'none' ? text.decoration : undefined}
                 letterSpacing={text.letterSpacing ? text.letterSpacing : undefined}
                 fill={textFillRef(text)}
+                stroke={text.strokeWidth && text.strokeWidth > 0 ? text.stroke : undefined}
+                strokeWidth={text.strokeWidth && text.strokeWidth > 0 ? text.strokeWidth : undefined}
+                strokeDasharray={textStrokeDashArray(text)}
+                strokeLinecap={textStrokeLinecap(text)}
+                strokeLinejoin="round"
+                paintOrder="stroke fill"
                 opacity={text.opacity != null && text.opacity !== 1 ? text.opacity : undefined}
                 dominantBaseline={text.baseline ?? 'alphabetic'}
                 className="select-none"

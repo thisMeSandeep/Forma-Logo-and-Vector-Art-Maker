@@ -82,7 +82,8 @@ export type TextDecoration = 'none' | 'underline' | 'line-through';
 // Maps to SVG dominant-baseline. 'alphabetic' is the default baseline.
 export type TextBaseline = 'hanging' | 'middle' | 'alphabetic' | 'ideographic';
 // Text-side fill kinds. Image is paint-as-pattern (the image clips to glyph shapes).
-export type TextFillKind = 'solid' | 'linear' | 'radial' | 'image';
+// 'none' is outline-only — the glyphs render only their stroke.
+export type TextFillKind = 'none' | 'solid' | 'linear' | 'radial' | 'image';
 
 export type TextItem = {
   id: string;
@@ -106,6 +107,10 @@ export type TextItem = {
   fillRadial?: RadialGradient;
   fillImage?: ImageFill;
   opacity?: number;  // 0..1
+  // Stroke/outline. Undefined width or 0 → no stroke.
+  stroke?: string;
+  strokeWidth?: number;
+  strokeStyle?: StrokeStyle;
   // Free-form transform applied around the local bbox center, mirrors Shape.transform.
   transform?: ShapeTransform;
 };
@@ -163,6 +168,9 @@ export type AppState = {
   textLineHeight: number;
   textBaseline: TextBaseline;
   textOpacity: number;
+  textStroke: string;
+  textStrokeWidth: number;
+  textStrokeStyle: StrokeStyle;
   selectedShapeId: string | null;
   selectedTextId: string | null;
   editingTextId: string | null;
@@ -248,6 +256,9 @@ export type AppState = {
   setTextLineHeight: (m: number) => void;
   setTextBaseline: (b: TextBaseline) => void;
   setTextOpacity: (o: number) => void;
+  setTextStroke: (c: string) => void;
+  setTextStrokeWidth: (w: number) => void;
+  setTextStrokeStyle: (s: StrokeStyle) => void;
   setTextTransform: (id: string, patch: Partial<ShapeTransform>) => void;
   resetTextTransform: (id: string) => void;
 };

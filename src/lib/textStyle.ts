@@ -13,9 +13,27 @@ export function textFillKind(text: TextItem) {
   return text.fillKind ?? 'solid';
 }
 
-// Resolves the SVG `fill` attribute value (either a color or a `url(#id)` ref).
+// Dash pattern scales with stroke width so dashed/dotted look the same at any
+// thickness. Mirrors strokeDashArray() in shapeStyle.ts.
+export function textStrokeDashArray(text: TextItem): string | undefined {
+  if (!text.strokeWidth || text.strokeWidth <= 0) return undefined;
+  const w = Math.max(0.5, text.strokeWidth);
+  switch (text.strokeStyle) {
+    case 'dashed': return `${w * 4} ${w * 3}`;
+    case 'dotted': return `${w * 0.1} ${w * 2}`;
+    default:       return undefined;
+  }
+}
+
+// Dotted needs round caps to be visible (a 0-length dash with butt caps draws nothing).
+export function textStrokeLinecap(text: TextItem): 'round' | undefined {
+  return text.strokeStyle === 'dotted' ? 'round' : undefined;
+}
+
+// Resolves the SVG `fill` attribute value (either a color, "none", or a `url(#id)` ref).
 export function textFillRef(text: TextItem): string {
   switch (textFillKind(text)) {
+    case 'none':   return 'none';
     case 'linear': return text.fillGradient ? `url(#${textLinearId(text)})`  : text.fill;
     case 'radial': return text.fillRadial   ? `url(#${textRadialId(text)})`  : text.fill;
     case 'image':  return text.fillImage    ? `url(#${textPatternId(text)})` : text.fill;

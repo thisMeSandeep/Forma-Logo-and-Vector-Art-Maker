@@ -104,6 +104,11 @@ export const TEXT_LINE_HEIGHT_MIN = 0.8;
 export const TEXT_LINE_HEIGHT_MAX = 3;
 export const TEXT_BASELINE_DEFAULT = 'alphabetic' as const;
 export const TEXT_OPACITY_DEFAULT = 1;
+export const TEXT_STROKE_DEFAULT = '#000000';
+export const TEXT_STROKE_WIDTH_DEFAULT = 0;
+export const TEXT_STROKE_WIDTH_MIN = 0;
+export const TEXT_STROKE_WIDTH_MAX = 20;
+export const TEXT_STROKE_STYLE_DEFAULT = 'solid' as const;
 
 // Full variable-font weight ladder. Geist Variable supports the whole range.
 export const TEXT_FONT_WEIGHT_OPTIONS: { label: string; value: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 }[] = [
